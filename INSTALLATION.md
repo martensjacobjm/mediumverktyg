@@ -69,7 +69,15 @@ När programmet startar:
 
 3. **Diagram (nedre höger)**
    - Visar jämförelse för valda medier
-   - Välj diagramtyp från dropdown
+   - Välj diagramtyp från dropdown:
+     * Tryck-Temperatur
+     * Förångningsvärme
+     * Viskositet
+     * Densitet (ånga)
+     * Jämförelse 4-panel
+     * **T-s diagram** (Temperatur-Entropi)
+     * **P-h diagram** (Tryck-Entalpi)
+     * **Mollier diagram** (Entalpi-Entropi)
    - Zooma med mushjul
 
 ## Snabbguide
@@ -95,8 +103,9 @@ När programmet startar:
 
 ### Exportera resultat
 
-- **Fil → Exportera PDF rapport** (kommer snart)
-- **Fil → Exportera CSV data** (kommer snart)
+- **Fil → Exportera PDF rapport** - Komplett rapport med diagram och data
+- **Fil → Exportera CSV data** - För Excel/LibreOffice analys
+- Alla diagram kan även sparas som PNG via matplotlib toolbar
 
 ## Felsökning
 
@@ -236,11 +245,10 @@ Se `README_PROJECT.md` för teknisk dokumentation.
 ### Bidra
 
 Pull requests välkomna! Fokusområden:
-- Fler diagramtyper
-- PDF-export implementation
 - Fler medier i metadata
 - Prestanda-optimeringar
 - Översättningar
+- Förbättrade termodynamiska beräkningar
 
 ## Licens
 
@@ -259,5 +267,5 @@ MIT License - Fri att använda i kommersiella och akademiska projekt.
 - TesTur experimentdata (YouTube K7qZvq1CMFg)
 - ASHRAE säkerhetsstandarder
 
-**Version:** 0.5.0
+**Version:** 1.0.0
 **Datum:** 2025-10-31

@@ -333,7 +333,7 @@ TIPS:
     def show_about(self):
         """Show about dialog"""
         about_text = """ORC WORKING FLUID ANALYSIS TOOL
-Version 0.5.0
+Version 1.0.0
 
 Dynamiskt verktyg för jämförelse av 79+ arbetsmedier
 för Tesla-turbin ORC-system.
@@ -343,7 +343,8 @@ Features:
 ✓ Automatiska termodynamiska beräkningar
 ✓ TesTur-validerad turbindesign
 ✓ Intelligent rankingsystem
-✓ Interaktiva filter och diagram
+✓ Interaktiva filter och 8 diagramtyper
+✓ T-s, P-h och Mollier termodynamiska diagram
 
 Utvecklad för:
 - Examensarbeten

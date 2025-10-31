@@ -47,10 +47,13 @@ class PlotPanel(ttk.Frame):
                 'Förångningsvärme',
                 'Viskositet',
                 'Densitet (ånga)',
-                'Jämförelse 4-panel'
+                'Jämförelse 4-panel',
+                'T-s diagram',
+                'P-h diagram',
+                'Mollier diagram (h-s)'
             ],
             state='readonly',
-            width=20
+            width=22
         )
         self.plot_type.set('Tryck-Temperatur')
         self.plot_type.pack(side=tk.LEFT, padx=5)
@@ -98,6 +101,12 @@ class PlotPanel(ttk.Frame):
             self._plot_density()
         elif plot_type == 'Jämförelse 4-panel':
             self._plot_four_panel()
+        elif plot_type == 'T-s diagram':
+            self._plot_ts_diagram()
+        elif plot_type == 'P-h diagram':
+            self._plot_ph_diagram()
+        elif plot_type == 'Mollier diagram (h-s)':
+            self._plot_mollier_diagram()
 
         self.canvas.draw()
 
@@ -289,6 +298,221 @@ class PlotPanel(ttk.Frame):
         axes[1, 1].legend(fontsize=8)
 
         self.figure.suptitle('Termodynamisk Jämförelse', fontsize=14, fontweight='bold')
+        self.figure.tight_layout()
+
+    def _plot_ts_diagram(self):
+        """Plot T-s diagram (Temperature-Entropy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+
+        for fluid in self.current_fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15  # Convert to Celsius
+                p_crit = PropsSI('PCRIT', fluid) / 1e5     # Convert to bar
+
+                # Temperature range from triple point to critical point
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                s_liquid = []
+                s_vapor = []
+                temps_valid = []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        # Liquid saturation entropy
+                        s_l = PropsSI('S', 'T', T_k, 'Q', 0, fluid) / 1000  # kJ/(kg·K)
+                        # Vapor saturation entropy
+                        s_v = PropsSI('S', 'T', T_k, 'Q', 1, fluid) / 1000  # kJ/(kg·K)
+
+                        s_liquid.append(s_l)
+                        s_vapor.append(s_v)
+                        temps_valid.append(T_c)
+                    except:
+                        continue
+
+                if len(temps_valid) > 10:
+                    # Plot saturation dome
+                    ax.plot(s_liquid, temps_valid, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(s_vapor, temps_valid, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Mark critical point
+                    s_crit = PropsSI('S', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+                    ax.plot(s_crit, T_crit, 'o', markersize=10,
+                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+
+            except Exception as e:
+                print(f"Could not plot T-s diagram for {fluid}: {e}")
+                continue
+
+        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Temperatur [°C]', fontsize=11, fontweight='bold')
+        ax.set_title('T-s Diagram (Temperatur-Entropi)', fontsize=13, fontweight='bold')
+        ax.legend(loc='best', fontsize=9)
+        ax.grid(True, alpha=0.3)
+
+        self.figure.tight_layout()
+
+    def _plot_ph_diagram(self):
+        """Plot P-h diagram (Pressure-Enthalpy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+
+        for fluid in self.current_fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15
+                p_crit = PropsSI('PCRIT', fluid) / 1e5
+                h_crit = PropsSI('H', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+
+                # Temperature range
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                h_liquid = []
+                h_vapor = []
+                p_sat = []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        # Get saturation pressure
+                        p = PropsSI('P', 'T', T_k, 'Q', 0, fluid) / 1e5  # bar
+                        # Liquid saturation enthalpy
+                        h_l = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000  # kJ/kg
+                        # Vapor saturation enthalpy
+                        h_v = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000  # kJ/kg
+
+                        h_liquid.append(h_l)
+                        h_vapor.append(h_v)
+                        p_sat.append(p)
+                    except:
+                        continue
+
+                if len(p_sat) > 10:
+                    # Plot saturation dome
+                    ax.plot(h_liquid, p_sat, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(h_vapor, p_sat, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Mark critical point
+                    ax.plot(h_crit, p_crit, 'o', markersize=10,
+                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+
+                    # Add isotherms (constant temperature lines) in two-phase region
+                    for T_iso in [20, 50, 80]:
+                        if T_min < T_iso < T_crit - 5:
+                            try:
+                                T_k = T_iso + 273.15
+                                p_iso = PropsSI('P', 'T', T_k, 'Q', 0, fluid) / 1e5
+                                h_l_iso = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000
+                                h_v_iso = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000
+                                ax.plot([h_l_iso, h_v_iso], [p_iso, p_iso],
+                                       'k:', alpha=0.4, linewidth=1)
+                                ax.text((h_l_iso + h_v_iso)/2, p_iso, f'{T_iso}°C',
+                                       fontsize=8, ha='center', va='bottom', alpha=0.6)
+                            except:
+                                pass
+
+            except Exception as e:
+                print(f"Could not plot P-h diagram for {fluid}: {e}")
+                continue
+
+        ax.set_xlabel('Entalpi h [kJ/kg]', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Tryck [bar]', fontsize=11, fontweight='bold')
+        ax.set_title('P-h Diagram (Tryck-Entalpi)', fontsize=13, fontweight='bold')
+        ax.set_yscale('log')
+        ax.legend(loc='best', fontsize=9)
+        ax.grid(True, alpha=0.3, which='both')
+
+        self.figure.tight_layout()
+
+    def _plot_mollier_diagram(self):
+        """Plot Mollier diagram (h-s, Enthalpy-Entropy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+
+        for fluid in self.current_fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15
+                p_crit = PropsSI('PCRIT', fluid) / 1e5
+                h_crit = PropsSI('H', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+                s_crit = PropsSI('S', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+
+                # Temperature range
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                h_liquid = []
+                h_vapor = []
+                s_liquid = []
+                s_vapor = []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        # Liquid saturation properties
+                        h_l = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000  # kJ/kg
+                        s_l = PropsSI('S', 'T', T_k, 'Q', 0, fluid) / 1000  # kJ/(kg·K)
+                        # Vapor saturation properties
+                        h_v = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000  # kJ/kg
+                        s_v = PropsSI('S', 'T', T_k, 'Q', 1, fluid) / 1000  # kJ/(kg·K)
+
+                        h_liquid.append(h_l)
+                        s_liquid.append(s_l)
+                        h_vapor.append(h_v)
+                        s_vapor.append(s_v)
+                    except:
+                        continue
+
+                if len(s_liquid) > 10:
+                    # Plot saturation dome
+                    ax.plot(s_liquid, h_liquid, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(s_vapor, h_vapor, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Mark critical point
+                    ax.plot(s_crit, h_crit, 'o', markersize=10,
+                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+
+                    # Add isobars (constant pressure lines) in two-phase region
+                    for p_iso_bar in [2, 5, 10]:
+                        if p_iso_bar < p_crit:
+                            try:
+                                # Find temperature at this pressure
+                                T_sat = PropsSI('T', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) - 273.15
+                                if T_min < T_sat < T_crit - 5:
+                                    h_l_iso = PropsSI('H', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) / 1000
+                                    s_l_iso = PropsSI('S', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) / 1000
+                                    h_v_iso = PropsSI('H', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
+                                    s_v_iso = PropsSI('S', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
+                                    ax.plot([s_l_iso, s_v_iso], [h_l_iso, h_v_iso],
+                                           'k:', alpha=0.4, linewidth=1)
+                                    ax.text(s_v_iso, h_v_iso, f'{p_iso_bar}bar',
+                                           fontsize=8, ha='left', va='bottom', alpha=0.6)
+                            except:
+                                pass
+
+            except Exception as e:
+                print(f"Could not plot Mollier diagram for {fluid}: {e}")
+                continue
+
+        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=11, fontweight='bold')
+        ax.set_ylabel('Entalpi h [kJ/kg]', fontsize=11, fontweight='bold')
+        ax.set_title('Mollier Diagram (Entalpi-Entropi)', fontsize=13, fontweight='bold')
+        ax.legend(loc='best', fontsize=9)
+        ax.grid(True, alpha=0.3)
+
         self.figure.tight_layout()
 
     def _on_plot_type_change(self, event):

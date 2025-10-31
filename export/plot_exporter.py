@@ -142,6 +142,212 @@ class PlotExporter:
         print(f"✓ Exported 4-panel comparison to {filename}")
         return filename
 
+    def export_ts_diagram(self, fluids: List[str], db, filename: str):
+        """Export T-s diagram (Temperature-Entropy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for fluid in fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15
+                p_crit = PropsSI('PCRIT', fluid) / 1e5
+
+                # Temperature range
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                s_liquid, s_vapor, temps_valid = [], [], []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        s_l = PropsSI('S', 'T', T_k, 'Q', 0, fluid) / 1000
+                        s_v = PropsSI('S', 'T', T_k, 'Q', 1, fluid) / 1000
+                        s_liquid.append(s_l)
+                        s_vapor.append(s_v)
+                        temps_valid.append(T_c)
+                    except:
+                        continue
+
+                if len(temps_valid) > 10:
+                    ax.plot(s_liquid, temps_valid, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(s_vapor, temps_valid, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Critical point
+                    s_crit = PropsSI('S', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+                    ax.plot(s_crit, T_crit, 'o', markersize=10,
+                           label=f'{fluid} critical point', markeredgewidth=2)
+
+            except Exception as e:
+                print(f"Warning: Could not plot {fluid} in T-s diagram: {e}")
+                continue
+
+        ax.set_xlabel('Entropy s [kJ/(kg·K)]', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Temperature [°C]', fontsize=12, fontweight='bold')
+        ax.set_title('T-s Diagram (Temperature-Entropy)', fontsize=14, fontweight='bold')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(filename, dpi=self.dpi, bbox_inches='tight')
+        plt.close()
+
+        print(f"✓ Exported T-s diagram to {filename}")
+        return filename
+
+    def export_ph_diagram(self, fluids: List[str], db, filename: str):
+        """Export P-h diagram (Pressure-Enthalpy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for fluid in fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15
+                p_crit = PropsSI('PCRIT', fluid) / 1e5
+                h_crit = PropsSI('H', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+
+                # Temperature range
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                h_liquid, h_vapor, p_sat = [], [], []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        p = PropsSI('P', 'T', T_k, 'Q', 0, fluid) / 1e5
+                        h_l = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000
+                        h_v = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000
+                        h_liquid.append(h_l)
+                        h_vapor.append(h_v)
+                        p_sat.append(p)
+                    except:
+                        continue
+
+                if len(p_sat) > 10:
+                    ax.plot(h_liquid, p_sat, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(h_vapor, p_sat, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Critical point
+                    ax.plot(h_crit, p_crit, 'o', markersize=10,
+                           label=f'{fluid} critical point', markeredgewidth=2)
+
+                    # Add isotherms
+                    for T_iso in [20, 50, 80]:
+                        if T_min < T_iso < T_crit - 5:
+                            try:
+                                T_k = T_iso + 273.15
+                                p_iso = PropsSI('P', 'T', T_k, 'Q', 0, fluid) / 1e5
+                                h_l_iso = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000
+                                h_v_iso = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000
+                                ax.plot([h_l_iso, h_v_iso], [p_iso, p_iso],
+                                       'k:', alpha=0.4, linewidth=1)
+                                ax.text((h_l_iso + h_v_iso)/2, p_iso, f'{T_iso}°C',
+                                       fontsize=8, ha='center', va='bottom', alpha=0.6)
+                            except:
+                                pass
+
+            except Exception as e:
+                print(f"Warning: Could not plot {fluid} in P-h diagram: {e}")
+                continue
+
+        ax.set_xlabel('Enthalpy h [kJ/kg]', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Pressure [bar]', fontsize=12, fontweight='bold')
+        ax.set_title('P-h Diagram (Pressure-Enthalpy)', fontsize=14, fontweight='bold')
+        ax.set_yscale('log')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3, which='both')
+
+        plt.tight_layout()
+        plt.savefig(filename, dpi=self.dpi, bbox_inches='tight')
+        plt.close()
+
+        print(f"✓ Exported P-h diagram to {filename}")
+        return filename
+
+    def export_mollier_diagram(self, fluids: List[str], db, filename: str):
+        """Export Mollier diagram (h-s, Enthalpy-Entropy)"""
+        from CoolProp.CoolProp import PropsSI
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+        for fluid in fluids:
+            try:
+                # Get critical point
+                T_crit = PropsSI('TCRIT', fluid) - 273.15
+                p_crit = PropsSI('PCRIT', fluid) / 1e5
+                h_crit = PropsSI('H', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+                s_crit = PropsSI('S', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
+
+                # Temperature range
+                T_min = PropsSI('TTRIPLE', fluid) - 273.15
+                T_range = np.linspace(max(T_min, -50), T_crit - 0.5, 100)
+
+                # Calculate saturation dome
+                h_liquid, h_vapor, s_liquid, s_vapor = [], [], [], []
+
+                for T_c in T_range:
+                    try:
+                        T_k = T_c + 273.15
+                        h_l = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000
+                        s_l = PropsSI('S', 'T', T_k, 'Q', 0, fluid) / 1000
+                        h_v = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000
+                        s_v = PropsSI('S', 'T', T_k, 'Q', 1, fluid) / 1000
+                        h_liquid.append(h_l)
+                        s_liquid.append(s_l)
+                        h_vapor.append(h_v)
+                        s_vapor.append(s_v)
+                    except:
+                        continue
+
+                if len(s_liquid) > 10:
+                    ax.plot(s_liquid, h_liquid, linewidth=2.5, label=f'{fluid} (liquid)')
+                    ax.plot(s_vapor, h_vapor, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+
+                    # Critical point
+                    ax.plot(s_crit, h_crit, 'o', markersize=10,
+                           label=f'{fluid} critical point', markeredgewidth=2)
+
+                    # Add isobars
+                    for p_iso_bar in [2, 5, 10]:
+                        if p_iso_bar < p_crit:
+                            try:
+                                T_sat = PropsSI('T', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) - 273.15
+                                if T_min < T_sat < T_crit - 5:
+                                    h_l_iso = PropsSI('H', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) / 1000
+                                    s_l_iso = PropsSI('S', 'P', p_iso_bar * 1e5, 'Q', 0, fluid) / 1000
+                                    h_v_iso = PropsSI('H', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
+                                    s_v_iso = PropsSI('S', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
+                                    ax.plot([s_l_iso, s_v_iso], [h_l_iso, h_v_iso],
+                                           'k:', alpha=0.4, linewidth=1)
+                                    ax.text(s_v_iso, h_v_iso, f'{p_iso_bar}bar',
+                                           fontsize=8, ha='left', va='bottom', alpha=0.6)
+                            except:
+                                pass
+
+            except Exception as e:
+                print(f"Warning: Could not plot {fluid} in Mollier diagram: {e}")
+                continue
+
+        ax.set_xlabel('Entropy s [kJ/(kg·K)]', fontsize=12, fontweight='bold')
+        ax.set_ylabel('Enthalpy h [kJ/kg]', fontsize=12, fontweight='bold')
+        ax.set_title('Mollier Diagram (Enthalpy-Entropy)', fontsize=14, fontweight='bold')
+        ax.legend(loc='best')
+        ax.grid(True, alpha=0.3)
+
+        plt.tight_layout()
+        plt.savefig(filename, dpi=self.dpi, bbox_inches='tight')
+        plt.close()
+
+        print(f"✓ Exported Mollier diagram to {filename}")
+        return filename
+
     def export_all_plots(self, fluids: List[str], db, base_filename: str):
         """
         Export all plot types
@@ -170,6 +376,21 @@ class PlotExporter:
         # 4-panel
         exports['four_panel'] = self.export_four_panel(
             fluids, db, f"{base_filename}_four_panel.png"
+        )
+
+        # T-s diagram (Temperature-Entropy)
+        exports['ts_diagram'] = self.export_ts_diagram(
+            fluids, db, f"{base_filename}_ts_diagram.png"
+        )
+
+        # P-h diagram (Pressure-Enthalpy)
+        exports['ph_diagram'] = self.export_ph_diagram(
+            fluids, db, f"{base_filename}_ph_diagram.png"
+        )
+
+        # Mollier diagram (h-s)
+        exports['mollier_diagram'] = self.export_mollier_diagram(
+            fluids, db, f"{base_filename}_mollier_diagram.png"
         )
 
         print(f"\n✓ Exported {len(exports)} plots")

@@ -34,7 +34,7 @@ Detta verktyg ger ingenjörer, forskare och studenter möjlighet att:
 ### 🖥️ Interactive GUI
 - ✅ **Realtidsfiltrering** och **sorterbara kolumner**
 - ✅ **Färgkodning** och **stjärnbetyg** ⭐⭐⭐⭐⭐
-- ✅ **5 diagramtyper** med matplotlib
+- ✅ **8 diagramtyper** med matplotlib inkl. T-s, P-h och Mollier
 - ✅ **Export till PDF, PNG, CSV**
 
 ---
