@@ -1,0 +1,185 @@
+================================================================================
+ORC BERÄKNINGSFORMLER - SNABBREFERENS
+================================================================================
+Projekt: ORC Malung Tesla-Turbin
+Datum: 2025-10-29
+================================================================================
+
+GRUNDLÄGGANDE TERMODYNAMIK
+--------------------------------------------------------------------------------
+
+1. CARNOT VERKNINGSGRAD (Teoretisk maximal)
+   η_carnot = 1 - (T_kall / T_varm)
+   
+   Exempel vid 50°C förångning, 20°C kondensering:
+   T_varm = 50 + 273 = 323 K
+   T_kall = 20 + 273 = 293 K
+   η_carnot = 1 - (293/323) = 0,0929 = 9,29%
+
+2. RANKINE VERKNINGSGRAD (ORC praktisk)
+   η_rankine = (h_in_turbin - h_ut_turbin) / (h_in_turbin - h_ut_pump)
+   
+   Real verkningsgrad: η_real = 0,3 - 0,4 (30-40%)
+   
+   Faktorer som minskar verkningsgrad:
+   - Turbinverkningsgrad η_turbin ≈ 50-60%
+   - Generatorverkningsgrad η_gen ≈ 90-95%
+   - Pumpverkningsgrad η_pump ≈ 60-70%
+   - Värmeväxlarförluster
+
+3. MASSFLÖDE från önskad effekt
+   ṁ = P_ut / (η_turbin × hfg)
+   
+   Exempel: Beräkna massflöde för 1 kW eleffekt med R1233zd(E) vid 50°C:
+   hfg = 177,32 kJ/kg (från tabell)
+   η_turbin = 0,55 (55% isentropisk verkningsgrad)
+   P_ut = 1000 W = 1 kJ/s
+   
+   ṁ = 1 / (0,55 × 177,32) = 0,01025 kg/s = 10,25 g/s
+
+4. EFFEKT från massflöde
+   P_ut = ṁ × η_turbin × hfg
+   
+   Exempel: Beräkna effekt för 15 g/s R245fa vid 50°C:
+   hfg = 175,93 kJ/kg
+   η_turbin = 0,55
+   ṁ = 0,015 kg/s
+   
+   P_ut = 0,015 × 0,55 × 175,93 = 1,45 kW
+
+5. TRYCKFÖRHÅLLANDE
+   PR = p_hög / p_låg
+   
+   Optimal PR för Tesla-turbin: 2-5:1
+   
+   Exempel R1233zd(E):
+   Förångning 50°C: p_hög = 2,93 bar
+   Kondensering 20°C: p_låg = 1,08 bar
+   PR = 2,93 / 1,08 = 2,71 ✓ (BRA)
+
+VÄRMEVÄXLARE DIMENSIONERING
+--------------------------------------------------------------------------------
+
+6. VÄRMEÖVERFÖRING (allmän)
+   Q̇ = U × A × LMTD
+   
+   där:
+   Q̇ = Värmeflöde [W]
+   U = Värmeöverföringskoefficient [W/m²·K]
+   A = Värmeväxlararea [m²]
+   LMTD = Logaritmisk medeltemperaturdifferens [K]
+
+7. LMTD (Logarithmic Mean Temperature Difference)
+   LMTD = (ΔT₁ - ΔT₂) / ln(ΔT₁ / ΔT₂)
+   
+   där:
+   ΔT₁ = T_varm_in - T_kall_ut
+   ΔT₂ = T_varm_ut - T_kall_in
+
+8. FÖRÅNGARE dimensionering
+   Q̇_förångare = ṁ × hfg
+   
+   Exempel: 15 g/s R1233zd(E) vid 50°C:
+   Q̇ = 0,015 × 177,32 = 2,66 kW värmeuttag
+
+9. KONDENSATOR dimensionering
+   Q̇_kondensor = ṁ × hfg + P_el
+   
+   (Värmen som måste bortföras = förångningsvärme + elektrisk förlust)
+
+TESLA-TURBIN SPECIFIKT
+--------------------------------------------------------------------------------
+
+10. DISKAVSTÅND från viskositet (skalning)
+    b₂ / b₁ = √(μ₂ / μ₁)
+    
+    Från TesTur (luft, μ=18,2 μPa·s, b=0,234 mm) till R1233zd(E) (μ=12,1 μPa·s):
+    b_R1233 / 0,234 = √(12,1 / 18,2) = 0,816
+    b_R1233 = 0,234 × 0,816 = 0,191 mm ≈ 0,19 mm
+
+11. TURBINHASTIGHET (preliminär)
+    Baserat på TesTur: 6000-15000 RPM beroende på tryck
+    Högre tryck → högre hastighet → högre effekt
+
+12. TURBIN EFFEKT (från tryck och massflöde)
+    P_turbin = ṁ × v_ut² / 2
+    
+    där v_ut = perifer hastighet vid diskutlopp
+    
+    Alternativt från entalpi:
+    P_turbin = ṁ × (h_in - h_ut) × η_turbin
+
+PUMPDIMENSIONERING
+--------------------------------------------------------------------------------
+
+13. PUMPEFFEKT
+    P_pump = ṁ × (p_hög - p_låg) / (ρ_vätska × η_pump)
+    
+    Exempel R1233zd(E):
+    ṁ = 0,015 kg/s
+    Δp = (2,93 - 1,08) bar = 185 kPa = 185000 Pa
+    ρ_vätska ≈ 1200 kg/m³
+    η_pump = 0,65
+    
+    P_pump = 0,015 × 185000 / (1200 × 0,65) = 3,56 W
+    
+    (Mycket liten jämfört med eleffekt 1-2 kW!)
+
+KÖLDBÄRARSYSTEM (Sommardrift)
+--------------------------------------------------------------------------------
+
+14. KÖLBÄRARE VÄRMEBORTFÖRSEL
+    Q̇_KB = ṁ_KB × c_p × ΔT
+    
+    Exempel: Kylvatten 10°C in → 15°C ut, kondensor 2 kW:
+    c_p ≈ 4,18 kJ/kg·K
+    ΔT = 5 K
+    
+    ṁ_KB = 2 / (4,18 × 5) = 0,096 kg/s = 96 g/s = 5,7 L/min
+
+SYSTEMFÖRLUSTER OCH EFFEKTIVITET
+--------------------------------------------------------------------------------
+
+15. TOTAL SYSTEMEFFEKTIVITET
+    η_total = η_carnot × η_turbin × η_gen × η_pumpförlust
+    
+    Typiska värden:
+    η_carnot = 0,093 (vid 50°C → 20°C)
+    η_turbin = 0,55
+    η_gen = 0,93
+    η_pumpförlust = 0,98
+    
+    η_total = 0,093 × 0,55 × 0,93 × 0,98 = 0,047 = 4,7%
+    
+    Real verkningsgrad ofta 3-5% för lågtemp ORC
+
+16. LÄCKAGEFÖRLUSTER
+    Kritiska punkter:
+    - Turbinskaft seal
+    - Värmeväxlarförbindningar
+    - Tank-ventiler
+    
+    Läckdetektorer OBLIGATORISKA för F-gas medier
+
+SNABBRÄKNARE - DIMENSIONERING
+--------------------------------------------------------------------------------
+
+För 1 kW eleffekt med R1233zd(E) vid 50°C → 20°C:
+
+Massflöde:     10-15 g/s
+Förångare:     2,5-3,5 kW värmeuttag
+Kondensator:   3,5-4,5 kW värmebortförsel
+Pumpeffekt:    5-10 W
+Turbinhastighet: 8000-12000 RPM
+Diskavstånd:   0,18-0,20 mm
+Tryckförhållande: 2,7:1
+
+================================================================================
+KÄLLOR
+--------------------------------------------------------------------------------
+- CoolProp termodynamisk databas
+- Ken Reiley Tesla Turbine Research
+- MDPI Tesla Turbine CFD Studies
+- Arbetsmedium analys ORC Malung
+
+================================================================================

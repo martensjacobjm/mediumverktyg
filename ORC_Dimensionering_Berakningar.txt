@@ -1,0 +1,218 @@
+
+======================================================================
+ORC MALUNG - DIMENSIONERINGSKALKYLATORN
+======================================================================
+
+### SCENARIO 1: GRUNDDIMENSIONERING ###
+Medium: R1233zd(E), Drift: 50°C → 20°C, Mål: 1 kW
+
+======================================================================
+ORC SYSTEMBERÄKNING: R1233zd(E)
+======================================================================
+
+--- DRIFTFÖRHÅLLANDEN ---
+Förångning:        50°C vid 2.93 bar
+Kondensering:      20°C vid 1.08 bar
+Tryckförhållande:  2.71:1
+Förångningsvärme:  214.4 kJ/kg
+Viskositet ånga:   12.1 μPa·s
+
+--- VERKNINGSGRADER ---
+Carnot (teoretisk max): 9.28%
+Turbin isentropisk:     55.0%
+Generator:              93.0%
+Total förväntad:        4.75%
+
+--- MASSFLÖDE ---
+För 1.0 kW eleffekt:
+  Massflöde behövt: 9.1 g/s (0.00912 kg/s)
+
+--- VÄRMEVÄXLARE ---
+Förångare värmebehov:  1.96 kW
+Kondensor kylbehov:    2.96 kW
+
+--- PUMP ---
+Tryckskillnad:     185 kPa
+Pumpeffekt:        2.0 W (0.20% av eleffekt)
+
+--- TESLA-TURBIN ---
+Optimalt diskavstånd:  0.191 mm
+  (skalat från TesTur 0.234 mm med μ=18.2 μPa·s)
+
+--- KÖLDBÄRARE (sommardrift vid 20°C) ---
+Värmebortförsel:   2.96 kW
+Köldbärare flöde:  141 g/s = 8.5 L/min
+  (vid ΔT=5K, 20°C → 25°C)
+
+--- SYSTEMSAMMANFATTNING ---
+Måleffekt (brutto):    1.0 kW
+Pumpförlust:           0.002 kW
+Nettoeffekt:           1.00 kW
+Systemverkningsgrad:   51.05%
+
+======================================================================
+
+
+### SCENARIO 2: HÖGRE EFFEKT ###
+Medium: R1233zd(E), Drift: 50°C → 20°C, Mål: 2 kW
+
+======================================================================
+ORC SYSTEMBERÄKNING: R1233zd(E)
+======================================================================
+
+--- DRIFTFÖRHÅLLANDEN ---
+Förångning:        50°C vid 2.93 bar
+Kondensering:      20°C vid 1.08 bar
+Tryckförhållande:  2.71:1
+Förångningsvärme:  214.4 kJ/kg
+Viskositet ånga:   12.1 μPa·s
+
+--- VERKNINGSGRADER ---
+Carnot (teoretisk max): 9.28%
+Turbin isentropisk:     55.0%
+Generator:              93.0%
+Total förväntad:        4.75%
+
+--- MASSFLÖDE ---
+För 2.0 kW eleffekt:
+  Massflöde behövt: 18.2 g/s (0.01824 kg/s)
+
+--- VÄRMEVÄXLARE ---
+Förångare värmebehov:  3.91 kW
+Kondensor kylbehov:    5.91 kW
+
+--- PUMP ---
+Tryckskillnad:     185 kPa
+Pumpeffekt:        4.1 W (0.20% av eleffekt)
+
+--- TESLA-TURBIN ---
+Optimalt diskavstånd:  0.191 mm
+  (skalat från TesTur 0.234 mm med μ=18.2 μPa·s)
+
+--- KÖLDBÄRARE (sommardrift vid 20°C) ---
+Värmebortförsel:   5.91 kW
+Köldbärare flöde:  283 g/s = 17.0 L/min
+  (vid ΔT=5K, 20°C → 25°C)
+
+--- SYSTEMSAMMANFATTNING ---
+Måleffekt (brutto):    2.0 kW
+Pumpförlust:           0.004 kW
+Nettoeffekt:           2.00 kW
+Systemverkningsgrad:   51.05%
+
+======================================================================
+
+
+### SCENARIO 3: MAXIMAL PRESTANDA (SOMMARDRIFT) ###
+Medium: R1233zd(E), Drift: 80°C → 10°C, Mål: 2 kW
+
+======================================================================
+ORC SYSTEMBERÄKNING: R1233zd(E)
+======================================================================
+
+--- DRIFTFÖRHÅLLANDEN ---
+Förångning:        80°C vid 6.58 bar
+Kondensering:      10°C vid 0.73 bar
+Tryckförhållande:  8.96:1
+Förångningsvärme:  245.9 kJ/kg
+Viskositet ånga:   13.4 μPa·s
+
+--- VERKNINGSGRADER ---
+Carnot (teoretisk max): 19.82%
+Turbin isentropisk:     55.0%
+Generator:              93.0%
+Total förväntad:        10.14%
+
+--- MASSFLÖDE ---
+För 2.0 kW eleffekt:
+  Massflöde behövt: 15.9 g/s (0.01590 kg/s)
+
+--- VÄRMEVÄXLARE ---
+Förångare värmebehov:  3.91 kW
+Kondensor kylbehov:    5.91 kW
+
+--- PUMP ---
+Tryckskillnad:     584 kPa
+Pumpeffekt:        11.0 W (0.55% av eleffekt)
+
+--- TESLA-TURBIN ---
+Optimalt diskavstånd:  0.201 mm
+  (skalat från TesTur 0.234 mm med μ=18.2 μPa·s)
+
+--- KÖLDBÄRARE (sommardrift vid 10°C) ---
+Värmebortförsel:   5.91 kW
+Köldbärare flöde:  283 g/s = 17.0 L/min
+  (vid ΔT=5K, 10°C → 15°C)
+
+--- SYSTEMSAMMANFATTNING ---
+Måleffekt (brutto):    2.0 kW
+Pumpförlust:           0.011 kW
+Nettoeffekt:           1.99 kW
+Systemverkningsgrad:   50.87%
+
+======================================================================
+
+
+### SCENARIO 4: R245fa JÄMFÖRELSE ###
+Medium: R245fa, Drift: 50°C → 20°C, Mål: 1 kW
+
+======================================================================
+ORC SYSTEMBERÄKNING: R245fa
+======================================================================
+
+--- DRIFTFÖRHÅLLANDEN ---
+Förångning:        50°C vid 3.44 bar
+Kondensering:      20°C vid 1.23 bar
+Tryckförhållande:  2.80:1
+Förångningsvärme:  216.3 kJ/kg
+Viskositet ånga:   12.9 μPa·s
+
+--- VERKNINGSGRADER ---
+Carnot (teoretisk max): 9.28%
+Turbin isentropisk:     55.0%
+Generator:              93.0%
+Total förväntad:        4.75%
+
+--- MASSFLÖDE ---
+För 1.0 kW eleffekt:
+  Massflöde behövt: 9.0 g/s (0.00904 kg/s)
+
+--- VÄRMEVÄXLARE ---
+Förångare värmebehov:  1.96 kW
+Kondensor kylbehov:    2.96 kW
+
+--- PUMP ---
+Tryckskillnad:     221 kPa
+Pumpeffekt:        2.3 W (0.23% av eleffekt)
+
+--- TESLA-TURBIN ---
+Optimalt diskavstånd:  0.197 mm
+  (skalat från TesTur 0.234 mm med μ=18.2 μPa·s)
+
+--- KÖLDBÄRARE (sommardrift vid 20°C) ---
+Värmebortförsel:   2.96 kW
+Köldbärare flöde:  141 g/s = 8.5 L/min
+  (vid ΔT=5K, 20°C → 25°C)
+
+--- SYSTEMSAMMANFATTNING ---
+Måleffekt (brutto):    1.0 kW
+Pumpförlust:           0.002 kW
+Nettoeffekt:           1.00 kW
+Systemverkningsgrad:   51.03%
+
+======================================================================
+
+
+======================================================================
+JÄMFÖRELSETABELL - ALLA SCENARION
+======================================================================
+
+Scenario                       m_dot        Q_evap       Q_cond       η_sys       
+                               [g/s]        [kW]         [kW]         [%]         
+----------------------------------------------------------------------
+1: R1233zd(E) 50→20°C 1kW      9.1          1.96         2.96         51.05       
+2: R1233zd(E) 50→20°C 2kW      18.2         3.91         5.91         51.05       
+3: R1233zd(E) 80→10°C 2kW      15.9         3.91         5.91         50.87       
+4: R245fa 50→20°C 1kW          9.0          1.96         2.96         51.03       
+======================================================================
+
