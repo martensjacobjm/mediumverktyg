@@ -5,13 +5,17 @@ Coordinates all GUI panels and application logic
 """
 
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 from gui.filter_panel import FilterPanel
 from gui.results_panel import ResultsPanel
 from gui.plot_panel import PlotPanel
 from core.fluid_database import FluidDatabase
 from core.scoring import FluidScorer, ScoringWeights
+from export.pdf_generator import PDFReportGenerator
+from export.csv_exporter import CSVExporter
+from export.plot_exporter import PlotExporter
 import threading
+import os
 
 
 class MainWindow:
@@ -204,22 +208,96 @@ class MainWindow:
 
     def export_pdf(self):
         """Export results to PDF"""
-        messagebox.showinfo(
-            "Export PDF",
-            "PDF-export kommer snart!\n\n"
-            "Kommer att inkludera:\n"
-            "- Komplett fluidlista\n"
-            "- Diagram\n"
-            "- Detaljerade beräkningar"
+        if not self.current_scores:
+            messagebox.showwarning("Export PDF", "Inga resultat att exportera!")
+            return
+
+        # Ask for filename
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".pdf",
+            filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
+            initialfile="orc_fluid_report.pdf"
         )
+
+        if not filename:
+            return  # User cancelled
+
+        self.set_status("Genererar PDF-rapport...")
+
+        def export_task():
+            try:
+                # Generate plots if fluids are selected
+                plot_files = None
+                if self.selected_fluids:
+                    plot_exporter = PlotExporter()
+                    base_name = filename.replace('.pdf', '')
+                    plot_files = plot_exporter.export_all_plots(
+                        self.selected_fluids,
+                        self.db,
+                        base_name
+                    )
+
+                # Generate PDF
+                pdf_gen = PDFReportGenerator()
+                pdf_gen.generate_report(
+                    self.current_scores,
+                    filename,
+                    selected_fluids=self.selected_fluids,
+                    plot_files=plot_files
+                )
+
+                self.root.after(0, lambda: messagebox.showinfo(
+                    "Export klar",
+                    f"PDF-rapport sparad:\n{filename}"
+                ))
+                self.root.after(0, lambda: self.set_status("PDF-export klar"))
+
+            except Exception as e:
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Export fel",
+                    f"Kunde inte skapa PDF:\n{str(e)}"
+                ))
+                self.root.after(0, lambda: self.set_status("Export misslyckades"))
+
+        thread = threading.Thread(target=export_task, daemon=True)
+        thread.start()
 
     def export_csv(self):
         """Export results to CSV"""
-        messagebox.showinfo(
-            "Export CSV",
-            "CSV-export kommer snart!\n\n"
-            "Kommer att exportera all data till Excel-format."
+        if not self.current_scores:
+            messagebox.showwarning("Export CSV", "Inga resultat att exportera!")
+            return
+
+        # Ask for filename
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            initialfile="orc_fluid_data.csv"
         )
+
+        if not filename:
+            return  # User cancelled
+
+        self.set_status("Exporterar till CSV...")
+
+        try:
+            # Export to CSV
+            exporter = CSVExporter()
+            exporter.export_scores(self.current_scores, filename)
+
+            messagebox.showinfo(
+                "Export klar",
+                f"CSV-fil sparad:\n{filename}\n\n"
+                f"Kan öppnas i Excel/LibreOffice"
+            )
+            self.set_status("CSV-export klar")
+
+        except Exception as e:
+            messagebox.showerror(
+                "Export fel",
+                f"Kunde inte skapa CSV:\n{str(e)}"
+            )
+            self.set_status("Export misslyckades")
 
     def show_user_guide(self):
         """Show user guide"""
