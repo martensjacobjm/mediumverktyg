@@ -1,12 +1,12 @@
 # Dynamic ORC Working Fluid Analysis Tool
 
-**Status:** Core modules implemented ✅
-**Next:** GUI implementation
-**Version:** 0.5.0
+**Status:** Complete GUI Application! ✅✅✅
+**Next:** Export functions (PDF, CSV)
+**Version:** 0.8.0
 
 ## Project Overview
 
-Python-based interactive tool for comparing and analyzing 79+ working fluids for Tesla turbine ORC systems.
+Python-based **interactive GUI tool** for comparing and analyzing 79+ working fluids for Tesla turbine ORC systems.
 
 ### Features Implemented
 
@@ -15,6 +15,13 @@ Python-based interactive tool for comparing and analyzing 79+ working fluids for
 - `core/thermodynamics.py` - Complete ORC cycle calculations
 - `core/tesla_turbine.py` - TesTur-validated turbine design
 - `core/scoring.py` - Weighted ranking algorithm
+
+✅ **GUI Application:**
+- `main.py` - Application entry point
+- `gui/main_window.py` - Main window with menu bar and status
+- `gui/filter_panel.py` - Interactive filters (sliders, checkboxes)
+- `gui/results_panel.py` - Sortable table with color-coded rankings
+- `gui/plot_panel.py` - Dynamic matplotlib plots (5 types)
 
 ✅ **Data:**
 - Automatic thermodynamic property retrieval from CoolProp
@@ -27,10 +34,12 @@ Python-based interactive tool for comparing and analyzing 79+ working fluids for
 # Install dependencies
 pip3 install -r requirements.txt
 
-# Test core modules
+# Run GUI application
+python3 main.py
+
+# Or test core modules
 python3 -m core.fluid_database
 python3 -m core.thermodynamics
-python3 -m core.tesla_turbine
 python3 -m core.scoring
 ```
 
