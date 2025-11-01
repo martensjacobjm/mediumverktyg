@@ -89,7 +89,8 @@ class MainWindow:
         self.results_panel = ResultsPanel(
             right_paned,
             on_selection_change=self.on_selection_change,
-            on_sort=self.on_sort
+            on_sort=self.on_sort,
+            db=self.db  # Pass database for detail dialog
         )
         right_paned.add(self.results_panel, weight=2)
 
