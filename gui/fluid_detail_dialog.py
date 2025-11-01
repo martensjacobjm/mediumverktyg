@@ -145,6 +145,30 @@ class FluidDetailDialog(tk.Toplevel):
             foreground='#333333'
         ).pack(side=tk.LEFT, padx=10)
 
+    def _get_brandklass(self, ashrae_class, flammable):
+        """Determine fire/flammability class based on ASHRAE classification"""
+        if not ashrae_class or ashrae_class == 'Unknown':
+            return "Okänd"
+
+        # ASHRAE flammability ratings:
+        # 1 = No flame propagation
+        # 2 = Lower flammability
+        # 2L = Lower flammability, low burning velocity
+        # 3 = Higher flammability
+
+        if ashrae_class.endswith('1'):
+            return "Icke brännbar (klass 1)"
+        elif ashrae_class.endswith('2L'):
+            return "Låg brännbarhet, låg flamhastighet (klass 2L)"
+        elif ashrae_class.endswith('2'):
+            return "Låg brännbarhet (klass 2)"
+        elif ashrae_class.endswith('3'):
+            return "Hög brännbarhet (klass 3)"
+        elif flammable:
+            return "Brännbar (klass okänd)"
+        else:
+            return "Icke brännbar"
+
     def _load_fluid_data(self):
         """Load all available fluid data"""
         try:
@@ -239,15 +263,46 @@ class FluidDetailDialog(tk.Toplevel):
         except:
             self._add_property(triple_section, "Trippelpunktstryck", "N/A")
 
+        # Additional thermodynamic limits
+        limits_section = self._add_section(frame, "Temperatur- och tryckgränser")
+
+        try:
+            T_min = CP.PropsSI('TMIN', self.fluid_name) - 273.15
+            self._add_property(limits_section, "Minsta giltig temperatur", f"{T_min:.2f}", "°C")
+        except:
+            pass
+
+        try:
+            T_max = CP.PropsSI('TMAX', self.fluid_name) - 273.15
+            self._add_property(limits_section, "Maximal giltig temperatur", f"{T_max:.2f}", "°C")
+        except:
+            pass
+
+        try:
+            p_max = CP.PropsSI('PMAX', self.fluid_name) / 1e5
+            self._add_property(limits_section, "Maximalt giltigt tryck", f"{p_max:.2f}", "bar")
+        except:
+            pass
+
     def _load_thermodynamic_properties(self, meta):
         """Load thermodynamic properties"""
         frame = self.thermo_frame.scrollable_frame
 
         # Boiling/phase change section
-        phase_section = self._add_section(frame, "Fasövergångar")
+        phase_section = self._add_section(frame, "Fasövergångar vid olika tryck")
 
         if meta and meta.T_boiling_1atm:
-            self._add_property(phase_section, "Kokpunkt @ 1 atm (Tb)", f"{meta.T_boiling_1atm:.2f}", "°C")
+            self._add_property(phase_section, "Kokpunkt/Daggpunkt @ 1 atm (1.013 bar)", f"{meta.T_boiling_1atm:.2f}", "°C")
+
+        # Show dew/boiling points at different pressures
+        pressures_bar = [0.5, 1.0, 2.0, 5.0, 10.0]
+        for p_bar in pressures_bar:
+            try:
+                # For pure substances, dew point = boiling point at given pressure
+                T_sat = CP.PropsSI('T', 'P', p_bar * 1e5, 'Q', 0, self.fluid_name) - 273.15
+                self._add_property(phase_section, f"Kokpunkt/Daggpunkt @ {p_bar} bar", f"{T_sat:.2f}", "°C")
+            except:
+                pass
 
         # Properties at standard conditions (25°C)
         std_section = self._add_section(frame, "Egenskaper vid 25°C")
@@ -287,6 +342,11 @@ class FluidDetailDialog(tk.Toplevel):
 
         if meta:
             self._add_property(safety_section, "ASHRAE säkerhetsklass", meta.ashrae_class or "N/A")
+
+            # Brandklass based on ASHRAE classification
+            brandklass = self._get_brandklass(meta.ashrae_class, meta.flammable)
+            self._add_property(safety_section, "Brandklass", brandklass)
+
             self._add_property(safety_section, "Brännbar", "Ja" if meta.flammable else "Nej")
             self._add_property(safety_section, "Giftig", "Ja" if meta.toxic else "Nej")
 
