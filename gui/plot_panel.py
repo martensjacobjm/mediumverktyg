@@ -22,6 +22,17 @@ class PlotPanel(ttk.Frame):
         self.db = None  # Will be set when plotting
         self.current_fluids = []
 
+        # Plot type selections (for combination diagrams)
+        self.plot_selections = {
+            'Tryck-Temperatur': tk.BooleanVar(value=True),
+            'Förångningsvärme': tk.BooleanVar(value=False),
+            'Viskositet': tk.BooleanVar(value=False),
+            'Densitet (ånga)': tk.BooleanVar(value=False),
+            'T-s diagram': tk.BooleanVar(value=False),
+            'P-h diagram': tk.BooleanVar(value=False),
+            'Mollier diagram (h-s)': tk.BooleanVar(value=False)
+        }
+
         self._create_widgets()
 
     def _create_widgets(self):
@@ -33,38 +44,70 @@ class PlotPanel(ttk.Frame):
 
         ttk.Label(
             control_frame,
-            text="DIAGRAM",
+            text="DIAGRAM - Välj diagram att visa:",
             font=('Arial', 12, 'bold')
         ).pack(side=tk.LEFT)
-
-        # Plot type selector
-        ttk.Label(control_frame, text="Typ:").pack(side=tk.LEFT, padx=(20, 5))
-
-        self.plot_type = ttk.Combobox(
-            control_frame,
-            values=[
-                'Tryck-Temperatur',
-                'Förångningsvärme',
-                'Viskositet',
-                'Densitet (ånga)',
-                'Jämförelse 4-panel',
-                'T-s diagram',
-                'P-h diagram',
-                'Mollier diagram (h-s)'
-            ],
-            state='readonly',
-            width=22
-        )
-        self.plot_type.set('Tryck-Temperatur')
-        self.plot_type.pack(side=tk.LEFT, padx=5)
-        self.plot_type.bind('<<ComboboxSelected>>', self._on_plot_type_change)
 
         # Refresh button
         ttk.Button(
             control_frame,
             text="Uppdatera",
             command=self._refresh_plot
-        ).pack(side=tk.LEFT, padx=5)
+        ).pack(side=tk.RIGHT, padx=5)
+
+        # Checkbox frame for plot type selection
+        checkbox_frame = ttk.LabelFrame(self, text="Välj diagramtyper (kombinationsdiagram)", padding=10)
+        checkbox_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
+
+        # Create checkboxes in rows
+        row1_frame = ttk.Frame(checkbox_frame)
+        row1_frame.pack(fill=tk.X, pady=2)
+
+        row2_frame = ttk.Frame(checkbox_frame)
+        row2_frame.pack(fill=tk.X, pady=2)
+
+        # Row 1: Basic property plots
+        for plot_type in ['Tryck-Temperatur', 'Förångningsvärme', 'Viskositet', 'Densitet (ånga)']:
+            ttk.Checkbutton(
+                row1_frame,
+                text=plot_type,
+                variable=self.plot_selections[plot_type],
+                command=self._on_selection_change
+            ).pack(side=tk.LEFT, padx=10)
+
+        # Row 2: Thermodynamic diagrams
+        for plot_type in ['T-s diagram', 'P-h diagram', 'Mollier diagram (h-s)']:
+            ttk.Checkbutton(
+                row2_frame,
+                text=plot_type,
+                variable=self.plot_selections[plot_type],
+                command=self._on_selection_change
+            ).pack(side=tk.LEFT, padx=10)
+
+        # Selection control buttons
+        btn_frame = ttk.Frame(checkbox_frame)
+        btn_frame.pack(fill=tk.X, pady=(5, 0))
+
+        ttk.Button(
+            btn_frame,
+            text="Välj alla",
+            command=self._select_all_plots,
+            width=12
+        ).pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(
+            btn_frame,
+            text="Avmarkera alla",
+            command=self._deselect_all_plots,
+            width=14
+        ).pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(
+            btn_frame,
+            text="Endast termodynamiska (T-s, P-h, Mollier)",
+            command=self._select_thermo_only,
+            width=35
+        ).pack(side=tk.LEFT, padx=2)
 
         # Create matplotlib figure
         self.figure = Figure(figsize=(10, 6), dpi=100)
@@ -81,7 +124,7 @@ class PlotPanel(ttk.Frame):
         self._plot_empty()
 
     def plot_comparison(self, fluids, db):
-        """Plot comparison for selected fluids"""
+        """Plot comparison for selected fluids - supports multiple plots"""
         self.current_fluids = fluids
         self.db = db
 
@@ -89,25 +132,52 @@ class PlotPanel(ttk.Frame):
             self._plot_empty()
             return
 
-        plot_type = self.plot_type.get()
+        # Get selected plot types
+        selected_plots = [
+            plot_type for plot_type, var in self.plot_selections.items()
+            if var.get()
+        ]
 
-        if plot_type == 'Tryck-Temperatur':
-            self._plot_pressure_temp()
-        elif plot_type == 'Förångningsvärme':
-            self._plot_latent_heat()
-        elif plot_type == 'Viskositet':
-            self._plot_viscosity()
-        elif plot_type == 'Densitet (ånga)':
-            self._plot_density()
-        elif plot_type == 'Jämförelse 4-panel':
-            self._plot_four_panel()
-        elif plot_type == 'T-s diagram':
-            self._plot_ts_diagram()
-        elif plot_type == 'P-h diagram':
-            self._plot_ph_diagram()
-        elif plot_type == 'Mollier diagram (h-s)':
-            self._plot_mollier_diagram()
+        if not selected_plots:
+            self._plot_empty()
+            return
 
+        # Clear figure
+        self.figure.clear()
+
+        # Determine grid layout
+        n_plots = len(selected_plots)
+        if n_plots == 1:
+            rows, cols = 1, 1
+        elif n_plots == 2:
+            rows, cols = 1, 2
+        elif n_plots <= 4:
+            rows, cols = 2, 2
+        elif n_plots <= 6:
+            rows, cols = 2, 3
+        else:
+            rows, cols = 3, 3
+
+        # Create subplots
+        for idx, plot_type in enumerate(selected_plots):
+            ax = self.figure.add_subplot(rows, cols, idx + 1)
+
+            if plot_type == 'Tryck-Temperatur':
+                self._plot_pressure_temp_ax(ax)
+            elif plot_type == 'Förångningsvärme':
+                self._plot_latent_heat_ax(ax)
+            elif plot_type == 'Viskositet':
+                self._plot_viscosity_ax(ax)
+            elif plot_type == 'Densitet (ånga)':
+                self._plot_density_ax(ax)
+            elif plot_type == 'T-s diagram':
+                self._plot_ts_diagram_ax(ax)
+            elif plot_type == 'P-h diagram':
+                self._plot_ph_diagram_ax(ax)
+            elif plot_type == 'Mollier diagram (h-s)':
+                self._plot_mollier_diagram_ax(ax)
+
+        self.figure.tight_layout()
         self.canvas.draw()
 
     def _plot_empty(self):
@@ -117,18 +187,39 @@ class PlotPanel(ttk.Frame):
         ax.text(
             0.5, 0.5,
             'Välj medier från listan ovan för jämförelse\n\n'
-            '(Ctrl+klick för multival)',
+            'Markera checkboxarna för att välja diagram',
             ha='center', va='center',
             fontsize=14, color='gray'
         )
         ax.axis('off')
         self.canvas.draw()
 
-    def _plot_pressure_temp(self):
-        """Plot pressure vs temperature"""
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
+    def _on_selection_change(self):
+        """Handle plot type selection change"""
+        if self.current_fluids and self.db:
+            self.plot_comparison(self.current_fluids, self.db)
 
+    def _select_all_plots(self):
+        """Select all plot types"""
+        for var in self.plot_selections.values():
+            var.set(True)
+        self._on_selection_change()
+
+    def _deselect_all_plots(self):
+        """Deselect all plot types"""
+        for var in self.plot_selections.values():
+            var.set(False)
+        self._on_selection_change()
+
+    def _select_thermo_only(self):
+        """Select only thermodynamic diagrams (T-s, P-h, Mollier)"""
+        thermo_plots = ['T-s diagram', 'P-h diagram', 'Mollier diagram (h-s)']
+        for plot_type, var in self.plot_selections.items():
+            var.set(plot_type in thermo_plots)
+        self._on_selection_change()
+
+    def _plot_pressure_temp_ax(self, ax):
+        """Plot pressure vs temperature on given axes"""
         temps = np.linspace(0, 100, 101)
 
         for fluid in self.current_fluids:
@@ -140,27 +231,22 @@ class PlotPanel(ttk.Frame):
                 else:
                     pressures.append(np.nan)
 
-            ax.plot(temps, pressures, label=fluid, linewidth=2, marker='o', markevery=10)
+            ax.plot(temps, pressures, label=fluid, linewidth=1.5, marker='o', markevery=20)
 
         # Optimal zones
-        ax.axhspan(2, 8, alpha=0.1, color='green', label='Optimal tryck (2-8 bar)')
+        ax.axhspan(2, 8, alpha=0.1, color='green')
         ax.axvspan(10, 30, alpha=0.05, color='blue')
         ax.axvspan(40, 80, alpha=0.05, color='red')
 
-        ax.set_xlabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Mättningstryck [bar]', fontsize=11, fontweight='bold')
-        ax.set_title('Tryck-Temperatur Jämförelse', fontsize=13, fontweight='bold')
-        ax.legend(loc='upper left')
+        ax.set_xlabel('Temp [°C]', fontsize=9)
+        ax.set_ylabel('Tryck [bar]', fontsize=9)
+        ax.set_title('Tryck-Temperatur', fontsize=10, fontweight='bold')
+        ax.legend(loc='upper left', fontsize=7)
         ax.grid(True, alpha=0.3)
         ax.set_xlim(0, 100)
 
-        self.figure.tight_layout()
-
-    def _plot_latent_heat(self):
-        """Plot latent heat vs temperature"""
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-
+    def _plot_latent_heat_ax(self, ax):
+        """Plot latent heat vs temperature on given axes"""
         temps = np.linspace(10, 80, 36)
 
         for fluid in self.current_fluids:
@@ -172,23 +258,18 @@ class PlotPanel(ttk.Frame):
                 else:
                     hfg_values.append(np.nan)
 
-            ax.plot(temps, hfg_values, label=fluid, linewidth=2, marker='s', markevery=4)
+            ax.plot(temps, hfg_values, label=fluid, linewidth=1.5, marker='s', markevery=8)
 
-        ax.axvline(50, color='gray', linestyle='--', alpha=0.5, label='Design temp (50°C)')
+        ax.axvline(50, color='gray', linestyle='--', alpha=0.5)
 
-        ax.set_xlabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Förångningsvärme hfg [kJ/kg]', fontsize=11, fontweight='bold')
-        ax.set_title('Förångningsvärme Jämförelse', fontsize=13, fontweight='bold')
-        ax.legend()
+        ax.set_xlabel('Temp [°C]', fontsize=9)
+        ax.set_ylabel('hfg [kJ/kg]', fontsize=9)
+        ax.set_title('Förångningsvärme', fontsize=10, fontweight='bold')
+        ax.legend(fontsize=7)
         ax.grid(True, alpha=0.3)
 
-        self.figure.tight_layout()
-
-    def _plot_viscosity(self):
-        """Plot vapor viscosity vs temperature"""
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-
+    def _plot_viscosity_ax(self, ax):
+        """Plot vapor viscosity vs temperature on given axes"""
         temps = np.linspace(10, 80, 36)
 
         for fluid in self.current_fluids:
@@ -200,25 +281,19 @@ class PlotPanel(ttk.Frame):
                 else:
                     mu_values.append(np.nan)
 
-            ax.plot(temps, mu_values, label=fluid, linewidth=2, marker='o', markevery=4)
+            ax.plot(temps, mu_values, label=fluid, linewidth=1.5, marker='o', markevery=8)
 
         # TesTur reference
-        ax.axhline(18.2, color='purple', linestyle=':', alpha=0.5, linewidth=2,
-                  label='TesTur ref (luft, 18.2 μPa·s)')
+        ax.axhline(18.2, color='purple', linestyle=':', alpha=0.5, linewidth=1.5)
 
-        ax.set_xlabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Viskositet ånga [μPa·s]', fontsize=11, fontweight='bold')
-        ax.set_title('Viskositet Jämförelse (påverkar diskavstånd)', fontsize=13, fontweight='bold')
-        ax.legend()
+        ax.set_xlabel('Temp [°C]', fontsize=9)
+        ax.set_ylabel('μ [μPa·s]', fontsize=9)
+        ax.set_title('Viskositet', fontsize=10, fontweight='bold')
+        ax.legend(fontsize=7)
         ax.grid(True, alpha=0.3)
 
-        self.figure.tight_layout()
-
-    def _plot_density(self):
-        """Plot vapor density vs temperature"""
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-
+    def _plot_density_ax(self, ax):
+        """Plot vapor density vs temperature on given axes"""
         temps = np.linspace(10, 80, 36)
 
         for fluid in self.current_fluids:
@@ -230,82 +305,17 @@ class PlotPanel(ttk.Frame):
                 else:
                     rho_values.append(np.nan)
 
-            ax.plot(temps, rho_values, label=fluid, linewidth=2, marker='d', markevery=4)
+            ax.plot(temps, rho_values, label=fluid, linewidth=1.5, marker='d', markevery=8)
 
-        ax.set_xlabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Ångdensitet [kg/m³]', fontsize=11, fontweight='bold')
-        ax.set_title('Densitet Jämförelse', fontsize=13, fontweight='bold')
-        ax.legend()
+        ax.set_xlabel('Temp [°C]', fontsize=9)
+        ax.set_ylabel('ρ [kg/m³]', fontsize=9)
+        ax.set_title('Densitet (ånga)', fontsize=10, fontweight='bold')
+        ax.legend(fontsize=7)
         ax.grid(True, alpha=0.3)
 
-        self.figure.tight_layout()
-
-    def _plot_four_panel(self):
-        """Plot 4-panel comparison"""
-        self.figure.clear()
-
-        temps = np.linspace(10, 80, 36)
-
-        # Create 2x2 subplots
-        axes = self.figure.subplots(2, 2)
-
-        for fluid in self.current_fluids:
-            p_vals, hfg_vals, mu_vals, rho_vals = [], [], [], []
-
-            for T in temps:
-                props = self.db.get_saturation_properties(fluid, T)
-                if props:
-                    p_vals.append(props.pressure)
-                    hfg_vals.append(props.hfg)
-                    mu_vals.append(props.mu_vapor)
-                    rho_vals.append(props.rho_vapor)
-                else:
-                    p_vals.append(np.nan)
-                    hfg_vals.append(np.nan)
-                    mu_vals.append(np.nan)
-                    rho_vals.append(np.nan)
-
-            # Plot 1: Pressure
-            axes[0, 0].plot(temps, p_vals, label=fluid, linewidth=2)
-            # Plot 2: Latent heat
-            axes[0, 1].plot(temps, hfg_vals, label=fluid, linewidth=2)
-            # Plot 3: Viscosity
-            axes[1, 0].plot(temps, mu_vals, label=fluid, linewidth=2)
-            # Plot 4: Density
-            axes[1, 1].plot(temps, rho_vals, label=fluid, linewidth=2)
-
-        # Configure subplots
-        axes[0, 0].set_title('(a) Mättningstryck', fontweight='bold')
-        axes[0, 0].set_ylabel('Tryck [bar]')
-        axes[0, 0].grid(True, alpha=0.3)
-        axes[0, 0].legend(fontsize=8)
-
-        axes[0, 1].set_title('(b) Förångningsvärme', fontweight='bold')
-        axes[0, 1].set_ylabel('hfg [kJ/kg]')
-        axes[0, 1].grid(True, alpha=0.3)
-        axes[0, 1].legend(fontsize=8)
-
-        axes[1, 0].set_title('(c) Viskositet', fontweight='bold')
-        axes[1, 0].set_xlabel('Temperatur [°C]')
-        axes[1, 0].set_ylabel('μ [μPa·s]')
-        axes[1, 0].grid(True, alpha=0.3)
-        axes[1, 0].legend(fontsize=8)
-
-        axes[1, 1].set_title('(d) Ångdensitet', fontweight='bold')
-        axes[1, 1].set_xlabel('Temperatur [°C]')
-        axes[1, 1].set_ylabel('ρ [kg/m³]')
-        axes[1, 1].grid(True, alpha=0.3)
-        axes[1, 1].legend(fontsize=8)
-
-        self.figure.suptitle('Termodynamisk Jämförelse', fontsize=14, fontweight='bold')
-        self.figure.tight_layout()
-
-    def _plot_ts_diagram(self):
-        """Plot T-s diagram (Temperature-Entropy)"""
+    def _plot_ts_diagram_ax(self, ax):
+        """Plot T-s diagram (Temperature-Entropy) on given axes"""
         from CoolProp.CoolProp import PropsSI
-
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
 
         for fluid in self.current_fluids:
             try:
@@ -338,32 +348,26 @@ class PlotPanel(ttk.Frame):
 
                 if len(temps_valid) > 10:
                     # Plot saturation dome
-                    ax.plot(s_liquid, temps_valid, linewidth=2.5, label=f'{fluid} (liquid)')
-                    ax.plot(s_vapor, temps_valid, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+                    ax.plot(s_liquid, temps_valid, linewidth=1.5, label=f'{fluid}')
+                    ax.plot(s_vapor, temps_valid, linewidth=1.5, linestyle='--')
 
                     # Mark critical point
                     s_crit = PropsSI('S', 'T', T_crit + 273.15, 'P', p_crit * 1e5, fluid) / 1000
-                    ax.plot(s_crit, T_crit, 'o', markersize=10,
-                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+                    ax.plot(s_crit, T_crit, 'o', markersize=6, markeredgewidth=1)
 
             except Exception as e:
                 print(f"Could not plot T-s diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Temperatur [°C]', fontsize=11, fontweight='bold')
-        ax.set_title('T-s Diagram (Temperatur-Entropi)', fontsize=13, fontweight='bold')
-        ax.legend(loc='best', fontsize=9)
+        ax.set_xlabel('s [kJ/(kg·K)]', fontsize=9)
+        ax.set_ylabel('T [°C]', fontsize=9)
+        ax.set_title('T-s Diagram', fontsize=10, fontweight='bold')
+        ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3)
 
-        self.figure.tight_layout()
-
-    def _plot_ph_diagram(self):
-        """Plot P-h diagram (Pressure-Enthalpy)"""
+    def _plot_ph_diagram_ax(self, ax):
+        """Plot P-h diagram (Pressure-Enthalpy) on given axes"""
         from CoolProp.CoolProp import PropsSI
-
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
 
         for fluid in self.current_fluids:
             try:
@@ -399,15 +403,14 @@ class PlotPanel(ttk.Frame):
 
                 if len(p_sat) > 10:
                     # Plot saturation dome
-                    ax.plot(h_liquid, p_sat, linewidth=2.5, label=f'{fluid} (liquid)')
-                    ax.plot(h_vapor, p_sat, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+                    ax.plot(h_liquid, p_sat, linewidth=1.5, label=f'{fluid}')
+                    ax.plot(h_vapor, p_sat, linewidth=1.5, linestyle='--')
 
                     # Mark critical point
-                    ax.plot(h_crit, p_crit, 'o', markersize=10,
-                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+                    ax.plot(h_crit, p_crit, 'o', markersize=6, markeredgewidth=1)
 
-                    # Add isotherms (constant temperature lines) in two-phase region
-                    for T_iso in [20, 50, 80]:
+                    # Add isotherms (simplified for combination view)
+                    for T_iso in [50]:
                         if T_min < T_iso < T_crit - 5:
                             try:
                                 T_k = T_iso + 273.15
@@ -415,9 +418,9 @@ class PlotPanel(ttk.Frame):
                                 h_l_iso = PropsSI('H', 'T', T_k, 'Q', 0, fluid) / 1000
                                 h_v_iso = PropsSI('H', 'T', T_k, 'Q', 1, fluid) / 1000
                                 ax.plot([h_l_iso, h_v_iso], [p_iso, p_iso],
-                                       'k:', alpha=0.4, linewidth=1)
+                                       'k:', alpha=0.3, linewidth=1)
                                 ax.text((h_l_iso + h_v_iso)/2, p_iso, f'{T_iso}°C',
-                                       fontsize=8, ha='center', va='bottom', alpha=0.6)
+                                       fontsize=7, ha='center', va='bottom', alpha=0.6)
                             except:
                                 pass
 
@@ -425,21 +428,16 @@ class PlotPanel(ttk.Frame):
                 print(f"Could not plot P-h diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('Entalpi h [kJ/kg]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Tryck [bar]', fontsize=11, fontweight='bold')
-        ax.set_title('P-h Diagram (Tryck-Entalpi)', fontsize=13, fontweight='bold')
+        ax.set_xlabel('h [kJ/kg]', fontsize=9)
+        ax.set_ylabel('P [bar]', fontsize=9)
+        ax.set_title('P-h Diagram', fontsize=10, fontweight='bold')
         ax.set_yscale('log')
-        ax.legend(loc='best', fontsize=9)
+        ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3, which='both')
 
-        self.figure.tight_layout()
-
-    def _plot_mollier_diagram(self):
-        """Plot Mollier diagram (h-s, Enthalpy-Entropy)"""
+    def _plot_mollier_diagram_ax(self, ax):
+        """Plot Mollier diagram (h-s, Enthalpy-Entropy) on given axes"""
         from CoolProp.CoolProp import PropsSI
-
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
 
         for fluid in self.current_fluids:
             try:
@@ -478,15 +476,14 @@ class PlotPanel(ttk.Frame):
 
                 if len(s_liquid) > 10:
                     # Plot saturation dome
-                    ax.plot(s_liquid, h_liquid, linewidth=2.5, label=f'{fluid} (liquid)')
-                    ax.plot(s_vapor, h_vapor, linewidth=2.5, label=f'{fluid} (vapor)', linestyle='--')
+                    ax.plot(s_liquid, h_liquid, linewidth=1.5, label=f'{fluid}')
+                    ax.plot(s_vapor, h_vapor, linewidth=1.5, linestyle='--')
 
                     # Mark critical point
-                    ax.plot(s_crit, h_crit, 'o', markersize=10,
-                           label=f'{fluid} kritisk punkt', markeredgewidth=2)
+                    ax.plot(s_crit, h_crit, 'o', markersize=6, markeredgewidth=1)
 
-                    # Add isobars (constant pressure lines) in two-phase region
-                    for p_iso_bar in [2, 5, 10]:
+                    # Add isobars (simplified for combination view)
+                    for p_iso_bar in [5]:
                         if p_iso_bar < p_crit:
                             try:
                                 # Find temperature at this pressure
@@ -497,9 +494,9 @@ class PlotPanel(ttk.Frame):
                                     h_v_iso = PropsSI('H', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
                                     s_v_iso = PropsSI('S', 'P', p_iso_bar * 1e5, 'Q', 1, fluid) / 1000
                                     ax.plot([s_l_iso, s_v_iso], [h_l_iso, h_v_iso],
-                                           'k:', alpha=0.4, linewidth=1)
+                                           'k:', alpha=0.3, linewidth=1)
                                     ax.text(s_v_iso, h_v_iso, f'{p_iso_bar}bar',
-                                           fontsize=8, ha='left', va='bottom', alpha=0.6)
+                                           fontsize=7, ha='left', va='bottom', alpha=0.6)
                             except:
                                 pass
 
@@ -507,18 +504,11 @@ class PlotPanel(ttk.Frame):
                 print(f"Could not plot Mollier diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=11, fontweight='bold')
-        ax.set_ylabel('Entalpi h [kJ/kg]', fontsize=11, fontweight='bold')
-        ax.set_title('Mollier Diagram (Entalpi-Entropi)', fontsize=13, fontweight='bold')
-        ax.legend(loc='best', fontsize=9)
+        ax.set_xlabel('s [kJ/(kg·K)]', fontsize=9)
+        ax.set_ylabel('h [kJ/kg]', fontsize=9)
+        ax.set_title('Mollier Diagram', fontsize=10, fontweight='bold')
+        ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3)
-
-        self.figure.tight_layout()
-
-    def _on_plot_type_change(self, event):
-        """Handle plot type change"""
-        if self.current_fluids and self.db:
-            self.plot_comparison(self.current_fluids, self.db)
 
     def _refresh_plot(self):
         """Refresh current plot"""
