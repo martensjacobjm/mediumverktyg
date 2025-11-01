@@ -58,7 +58,7 @@ class ResultsPanel(ttk.Frame):
         # Define columns
         columns = (
             'rank', 'fluid', 'total', 'thermo', 'env', 'safety', 'econ',
-            'gwp', 'ashrae', 'p_50', 'hfg', 'pr'
+            'gwp', 'ashrae', 'T_boil', 'p_50', 'hfg', 'pr'
         )
 
         self.tree = ttk.Treeview(
@@ -84,6 +84,7 @@ class ResultsPanel(ttk.Frame):
             'econ': ('Ekon', 60),
             'gwp': ('GWP', 60),
             'ashrae': ('Klass', 60),
+            'T_boil': ('Tb@1atm', 70),
             'p_50': ('P@50°C', 70),
             'hfg': ('hfg', 70),
             'pr': ('PR', 60)
@@ -144,6 +145,7 @@ class ResultsPanel(ttk.Frame):
                 f"{score.econ_score:.1f}",
                 score.gwp or '-',
                 score.ashrae_class or '-',
+                f"{score.T_boiling_1atm:.1f}" if score.T_boiling_1atm else '-',
                 f"{score.pressure_50C:.2f}" if score.pressure_50C else '-',
                 f"{score.hfg_50C:.1f}" if score.hfg_50C else '-',
                 f"{score.pressure_ratio:.2f}" if score.pressure_ratio else '-'
@@ -252,18 +254,21 @@ if __name__ == "__main__":
             fluid='R1233zd(E)', rank=1,
             thermo_score=100, env_score=100, safety_score=100, econ_score=64,
             total_score=96.4, gwp=7, ashrae_class='A1',
+            T_boiling_1atm=18.3,
             pressure_50C=2.93, hfg_50C=177.3, pressure_ratio=2.71
         ),
         FluidScore(
             fluid='R245fa', rank=2,
             thermo_score=100, env_score=43, safety_score=80, econ_score=75,
             total_score=76.4, gwp=1030, ashrae_class='B1',
+            T_boiling_1atm=15.1,
             pressure_50C=3.44, hfg_50C=175.9, pressure_ratio=2.80
         ),
         FluidScore(
             fluid='Isopentane', rank=3,
             thermo_score=100, env_score=100, safety_score=40, econ_score=90,
             total_score=87.0, gwp=5, ashrae_class='A3',
+            T_boiling_1atm=27.8,
             pressure_50C=2.06, hfg_50C=325.3, pressure_ratio=2.06
         ),
     ]

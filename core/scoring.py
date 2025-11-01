@@ -50,6 +50,7 @@ class FluidScore:
     odp: Optional[float] = None
     ashrae_class: Optional[str] = None
     orc_suitability: Optional[str] = None
+    T_boiling_1atm: Optional[float] = None  # Boiling point @ 1 atm [°C]
 
     # Ranking
     rank: Optional[int] = None
@@ -318,7 +319,8 @@ class FluidScorer:
             gwp=env_details.get('gwp'),
             odp=env_details.get('odp'),
             ashrae_class=safety_details.get('ashrae_class'),
-            orc_suitability=meta.orc_suitability if meta else None
+            orc_suitability=meta.orc_suitability if meta else None,
+            T_boiling_1atm=meta.T_boiling_1atm if meta else None
         )
 
     def rank_fluids(self, fluids: Optional[List[str]] = None) -> List[FluidScore]:
