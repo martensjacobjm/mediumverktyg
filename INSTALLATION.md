@@ -2,10 +2,23 @@
 
 ## Systemkrav
 
-- **Python:** 3.8 eller senare
+- **Python:** 3.8 - 3.13 (VIKTIGT: Python 3.14+ fungerar INTE ännu!)
 - **Operativsystem:** Windows, macOS, eller Linux med X11
 - **RAM:** Minst 2 GB
 - **Disk:** ~500 MB (för dependencies och cache)
+
+### ⚠️ KRITISKT - Python-version
+
+**CoolProp** (kärnkomponent) har inte paket för Python 3.14+.
+
+**Kontrollera din version:**
+```bash
+python --version
+```
+
+**Har du Python 3.14?**
+1. Installera Python 3.12: https://www.python.org/downloads/release/python-3120/
+2. Välj den i VSCode: `Ctrl+Shift+P` → "Python: Select Interpreter" → Python 3.12
 
 ## Installation
 
@@ -16,27 +29,42 @@ git clone <repository-url>
 cd mediumverktyg
 ```
 
-### 2. Installera dependencies
+### 2. Kontrollera Python-version (VIKTIGT!)
 
+```bash
+# Kör detta FÖRST för att verifiera din Python-version
+python check_python_version.py
+```
+
+Om du har Python 3.14, **STOPP** - se instruktioner ovan för att installera Python 3.12.
+
+### 3. Installera dependencies
+
+**Rekommenderad metod** (kontrollerar Python-version automatiskt):
+```bash
+pip install -e .
+```
+
+**Alternativ metod** (om du är säker på din Python-version):
 ```bash
 pip install -r requirements.txt
 ```
 
 **Dependencies som installeras:**
-- CoolProp (termodynamisk databas)
+- CoolProp (termodynamisk databas) - **KRÄVER Python 3.8-3.13**
 - matplotlib (diagram)
 - numpy, pandas (datahantering)
 - reportlab (PDF-export)
-- tkinter (GUI - oftast föriinstallerat med Python)
+- tkinter (GUI - föriinstallerat med Python)
 
-### 3. Verifiera installation
+### 4. Verifiera installation
 
 ```bash
 # Testa core-moduler
-python3 -m core.fluid_database
-python3 -m core.thermodynamics
-python3 -m core.tesla_turbine
-python3 -m core.scoring
+python -m core.fluid_database
+python -m core.thermodynamics
+python -m core.tesla_turbine
+python -m core.scoring
 ```
 
 Om alla tester kör utan fel är installationen klar!
@@ -109,11 +137,24 @@ När programmet startar:
 
 ## Felsökning
 
+### "Building wheel for CoolProp failed" eller "Cannot open include file: 'boost/..."
+
+**Orsak:** Du har Python 3.14 som CoolProp inte stödjer än.
+
+**Lösning:**
+1. Installera Python 3.12: https://www.python.org/downloads/release/python-3120/
+2. I VSCode: `Ctrl+Shift+P` → "Python: Select Interpreter" → Python 3.12
+3. Kör installation igen: `pip install -e .`
+
 ### "ModuleNotFoundError: No module named 'CoolProp'"
 
+**Efter lyckad installation:**
 ```bash
 pip install CoolProp
 ```
+
+**Om det fortfarande inte fungerar - Python 3.14-problem:**
+Se lösningen ovan.
 
 ### "ModuleNotFoundError: No module named 'tkinter'"
 

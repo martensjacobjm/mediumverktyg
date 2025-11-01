@@ -5,6 +5,33 @@ Dynamic tool for comparing 79+ working fluids for Tesla turbine ORC systems
 """
 
 import sys
+
+# Check Python version BEFORE importing anything else
+if sys.version_info < (3, 8):
+    print("\n" + "="*70)
+    print("ERROR: Python 3.8 or higher is required!")
+    print("="*70)
+    print(f"\nCurrent version: Python {sys.version_info.major}.{sys.version_info.minor}")
+    print("Required: Python 3.8 - 3.13")
+    print("\nPlease install Python 3.12 from https://www.python.org/downloads/")
+    print("="*70)
+    sys.exit(1)
+
+if sys.version_info >= (3, 14):
+    print("\n" + "="*70)
+    print("ERROR: Python 3.14+ is not yet supported!")
+    print("="*70)
+    print(f"\nCurrent version: Python {sys.version_info.major}.{sys.version_info.minor}")
+    print("Required: Python 3.8 - 3.13")
+    print("\nProblem: CoolProp (required dependency) does not have")
+    print("         pre-built packages for Python 3.14+ yet.")
+    print("\nSOLUTION:")
+    print("  1. Install Python 3.12 from https://www.python.org/downloads/")
+    print("  2. In VSCode: Ctrl+Shift+P → 'Python: Select Interpreter' → Python 3.12")
+    print("  3. Run installation: pip install -e .")
+    print("="*70)
+    sys.exit(1)
+
 import tkinter as tk
 from tkinter import messagebox
 from gui.main_window import MainWindow

@@ -41,13 +41,29 @@ Detta verktyg ger ingenjörer, forskare och studenter möjlighet att:
 
 ## 🚀 Snabbstart
 
+### ⚠️ Python-versionskrav:
+- **Kräver:** Python 3.8 - 3.13
+- **Fungerar INTE:** Python 3.14+ (CoolProp saknas ännu)
+
+### Kontrollera din Python-version:
 ```bash
-# Installation
+python --version
+python check_python_version.py  # Detaljerad kontroll
+```
+
+### Installation:
+```bash
+# Rekommenderad metod (kontrollerar Python-version automatiskt)
+pip install -e .
+
+# Alternativ metod
 pip install -r requirements.txt
 
 # Kör applikationen
-python3 main.py
+python main.py
 ```
+
+**Har du Python 3.14?** → Installera Python 3.12 från [python.org](https://www.python.org/downloads/)
 
 ---
 
