@@ -6,16 +6,18 @@ Displays scored and ranked fluids with detailed information
 
 import tkinter as tk
 from tkinter import ttk
+from gui.fluid_detail_dialog import FluidDetailDialog
 
 
 class ResultsPanel(ttk.Frame):
     """Results panel with sortable treeview table"""
 
-    def __init__(self, parent, on_selection_change=None, on_sort=None):
+    def __init__(self, parent, on_selection_change=None, on_sort=None, db=None):
         super().__init__(parent)
 
         self.on_selection_change = on_selection_change
         self.on_sort = on_sort
+        self.db = db  # Database reference for detail dialog
 
         self.current_scores = []
         self.sort_column = None
@@ -126,10 +128,16 @@ class ResultsPanel(ttk.Frame):
         # Bind click event for checkbox toggling
         self.tree.bind('<Button-1>', self._on_click)
 
+        # Bind double-click to show detail dialog
+        self.tree.bind('<Double-Button-1>', self._on_double_click)
+
+        # Bind right-click to show detail dialog
+        self.tree.bind('<Button-3>', self._on_right_click)
+
         # Instructions
         info = ttk.Label(
             self,
-            text="Klicka på checkbox för att välja | Klicka på kolumnrubrik för sortering",
+            text="Klicka på checkbox för att välja | Dubbelklick/högerklick på rad för FULL info | Klicka på kolumnrubrik för sortering",
             font=('Arial', 9, 'italic'),
             foreground='gray'
         )
@@ -292,6 +300,41 @@ class ResultsPanel(ttk.Frame):
 
         if self.on_selection_change:
             self.on_selection_change(list(self.checked_fluids))
+
+    def _on_double_click(self, event):
+        """Handle double-click to show fluid details"""
+        self._show_fluid_detail(event)
+
+    def _on_right_click(self, event):
+        """Handle right-click to show fluid details"""
+        self._show_fluid_detail(event)
+
+    def _show_fluid_detail(self, event):
+        """Show detailed fluid information dialog"""
+        # Check if database is available
+        if not self.db:
+            print("Warning: Database not available for detail view")
+            return
+
+        # Get clicked item
+        item = self.tree.identify_row(event.y)
+        if not item:
+            return
+
+        # Get fluid name from item
+        values = self.tree.item(item)['values']
+        if len(values) < 3:
+            return
+
+        fluid_with_stars = values[2]  # Column 2 is fluid name (after select and rank)
+        fluid = fluid_with_stars.split()[0]  # Remove stars
+
+        # Show detail dialog
+        try:
+            dialog = FluidDetailDialog(self, fluid, self.db)
+            dialog.focus_set()
+        except Exception as e:
+            print(f"Error showing fluid details for {fluid}: {e}")
 
 
 # Test standalone
