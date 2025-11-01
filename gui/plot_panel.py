@@ -28,9 +28,9 @@ class PlotPanel(ttk.Frame):
             'Förångningsvärme': tk.BooleanVar(value=False),
             'Viskositet': tk.BooleanVar(value=False),
             'Densitet (ånga)': tk.BooleanVar(value=False),
-            'T-s diagram': tk.BooleanVar(value=False),
-            'P-h diagram': tk.BooleanVar(value=False),
-            'Mollier diagram (h-s)': tk.BooleanVar(value=False)
+            'Temperatur-Entropi diagram': tk.BooleanVar(value=False),
+            'Tryck-Entalpi diagram': tk.BooleanVar(value=False),
+            'Mollier diagram (Entalpi-Entropi)': tk.BooleanVar(value=False)
         }
 
         self._create_widgets()
@@ -76,7 +76,7 @@ class PlotPanel(ttk.Frame):
             ).pack(side=tk.LEFT, padx=10)
 
         # Row 2: Thermodynamic diagrams
-        for plot_type in ['T-s diagram', 'P-h diagram', 'Mollier diagram (h-s)']:
+        for plot_type in ['Temperatur-Entropi diagram', 'Tryck-Entalpi diagram', 'Mollier diagram (Entalpi-Entropi)']:
             ttk.Checkbutton(
                 row2_frame,
                 text=plot_type,
@@ -104,9 +104,9 @@ class PlotPanel(ttk.Frame):
 
         ttk.Button(
             btn_frame,
-            text="Endast termodynamiska (T-s, P-h, Mollier)",
+            text="Endast termodynamiska diagram",
             command=self._select_thermo_only,
-            width=35
+            width=30
         ).pack(side=tk.LEFT, padx=2)
 
         # Create matplotlib figure
@@ -170,11 +170,11 @@ class PlotPanel(ttk.Frame):
                 self._plot_viscosity_ax(ax)
             elif plot_type == 'Densitet (ånga)':
                 self._plot_density_ax(ax)
-            elif plot_type == 'T-s diagram':
+            elif plot_type == 'Temperatur-Entropi diagram':
                 self._plot_ts_diagram_ax(ax)
-            elif plot_type == 'P-h diagram':
+            elif plot_type == 'Tryck-Entalpi diagram':
                 self._plot_ph_diagram_ax(ax)
-            elif plot_type == 'Mollier diagram (h-s)':
+            elif plot_type == 'Mollier diagram (Entalpi-Entropi)':
                 self._plot_mollier_diagram_ax(ax)
 
         self.figure.tight_layout()
@@ -212,8 +212,8 @@ class PlotPanel(ttk.Frame):
         self._on_selection_change()
 
     def _select_thermo_only(self):
-        """Select only thermodynamic diagrams (T-s, P-h, Mollier)"""
-        thermo_plots = ['T-s diagram', 'P-h diagram', 'Mollier diagram (h-s)']
+        """Select only thermodynamic diagrams"""
+        thermo_plots = ['Temperatur-Entropi diagram', 'Tryck-Entalpi diagram', 'Mollier diagram (Entalpi-Entropi)']
         for plot_type, var in self.plot_selections.items():
             var.set(plot_type in thermo_plots)
         self._on_selection_change()
@@ -359,9 +359,9 @@ class PlotPanel(ttk.Frame):
                 print(f"Could not plot T-s diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('s [kJ/(kg·K)]', fontsize=9)
-        ax.set_ylabel('T [°C]', fontsize=9)
-        ax.set_title('T-s Diagram', fontsize=10, fontweight='bold')
+        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=9)
+        ax.set_ylabel('Temperatur T [°C]', fontsize=9)
+        ax.set_title('Temperatur-Entropi Diagram', fontsize=10, fontweight='bold')
         ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3)
 
@@ -428,9 +428,9 @@ class PlotPanel(ttk.Frame):
                 print(f"Could not plot P-h diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('h [kJ/kg]', fontsize=9)
-        ax.set_ylabel('P [bar]', fontsize=9)
-        ax.set_title('P-h Diagram', fontsize=10, fontweight='bold')
+        ax.set_xlabel('Entalpi h [kJ/kg]', fontsize=9)
+        ax.set_ylabel('Tryck P [bar]', fontsize=9)
+        ax.set_title('Tryck-Entalpi Diagram', fontsize=10, fontweight='bold')
         ax.set_yscale('log')
         ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3, which='both')
@@ -504,9 +504,9 @@ class PlotPanel(ttk.Frame):
                 print(f"Could not plot Mollier diagram for {fluid}: {e}")
                 continue
 
-        ax.set_xlabel('s [kJ/(kg·K)]', fontsize=9)
-        ax.set_ylabel('h [kJ/kg]', fontsize=9)
-        ax.set_title('Mollier Diagram', fontsize=10, fontweight='bold')
+        ax.set_xlabel('Entropi s [kJ/(kg·K)]', fontsize=9)
+        ax.set_ylabel('Entalpi h [kJ/kg]', fontsize=9)
+        ax.set_title('Mollier Diagram (Entalpi-Entropi)', fontsize=10, fontweight='bold')
         ax.legend(loc='best', fontsize=7)
         ax.grid(True, alpha=0.3)
 
