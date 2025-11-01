@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use('TkAgg')
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib.figure import Figure
+from matplotlib.ticker import AutoMinorLocator, MaxNLocator
 import numpy as np
 
 
@@ -242,7 +243,15 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('Tryck [bar]', fontsize=9)
         ax.set_title('Tryck-Temperatur', fontsize=10, fontweight='bold')
         ax.legend(loc='upper left', fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=10, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=10, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
+
         ax.set_xlim(0, 100)
 
     def _plot_latent_heat_ax(self, ax):
@@ -266,7 +275,14 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('hfg [kJ/kg]', fontsize=9)
         ax.set_title('Förångningsvärme', fontsize=10, fontweight='bold')
         ax.legend(fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _plot_viscosity_ax(self, ax):
         """Plot vapor viscosity vs temperature on given axes"""
@@ -290,7 +306,14 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('μ [μPa·s]', fontsize=9)
         ax.set_title('Viskositet', fontsize=10, fontweight='bold')
         ax.legend(fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _plot_density_ax(self, ax):
         """Plot vapor density vs temperature on given axes"""
@@ -311,7 +334,14 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('ρ [kg/m³]', fontsize=9)
         ax.set_title('Densitet (ånga)', fontsize=10, fontweight='bold')
         ax.legend(fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _plot_ts_diagram_ax(self, ax):
         """Plot T-s diagram (Temperature-Entropy) on given axes"""
@@ -363,7 +393,14 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('Temperatur T [°C]', fontsize=9)
         ax.set_title('Temperatur-Entropi Diagram', fontsize=10, fontweight='bold')
         ax.legend(loc='best', fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _plot_ph_diagram_ax(self, ax):
         """Plot P-h diagram (Pressure-Enthalpy) on given axes"""
@@ -433,7 +470,12 @@ class PlotPanel(ttk.Frame):
         ax.set_title('Tryck-Entalpi Diagram', fontsize=10, fontweight='bold')
         ax.set_yscale('log')
         ax.legend(loc='best', fontsize=7)
-        ax.grid(True, alpha=0.3, which='both')
+
+        # Better grid (log scale already has good ticks)
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _plot_mollier_diagram_ax(self, ax):
         """Plot Mollier diagram (h-s, Enthalpy-Entropy) on given axes"""
@@ -508,7 +550,14 @@ class PlotPanel(ttk.Frame):
         ax.set_ylabel('Entalpi h [kJ/kg]', fontsize=9)
         ax.set_title('Mollier Diagram (Entalpi-Entropi)', fontsize=10, fontweight='bold')
         ax.legend(loc='best', fontsize=7)
-        ax.grid(True, alpha=0.3)
+
+        # Better grid and scaling
+        ax.grid(True, alpha=0.3, which='major', linestyle='-', linewidth=0.5)
+        ax.grid(True, alpha=0.15, which='minor', linestyle=':', linewidth=0.3)
+        ax.yaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.yaxis.set_minor_locator(AutoMinorLocator(2))
+        ax.xaxis.set_major_locator(MaxNLocator(nbins=8, prune=None))
+        ax.xaxis.set_minor_locator(AutoMinorLocator(2))
 
     def _refresh_plot(self):
         """Refresh current plot"""
