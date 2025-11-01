@@ -20,6 +20,7 @@ class ResultsPanel(ttk.Frame):
         self.current_scores = []
         self.sort_column = None
         self.sort_reverse = False
+        self.checked_fluids = set()  # Track checked fluids
 
         self._create_widgets()
 
@@ -36,6 +37,24 @@ class ResultsPanel(ttk.Frame):
             font=('Arial', 12, 'bold')
         )
         title.pack(side=tk.LEFT)
+
+        # Selection buttons
+        btn_frame = ttk.Frame(header_frame)
+        btn_frame.pack(side=tk.RIGHT, padx=10)
+
+        ttk.Button(
+            btn_frame,
+            text="Välj alla",
+            command=self._select_all,
+            width=10
+        ).pack(side=tk.LEFT, padx=2)
+
+        ttk.Button(
+            btn_frame,
+            text="Avmarkera alla",
+            command=self._deselect_all,
+            width=12
+        ).pack(side=tk.LEFT, padx=2)
 
         self.count_label = ttk.Label(
             header_frame,
@@ -57,7 +76,7 @@ class ResultsPanel(ttk.Frame):
 
         # Define columns
         columns = (
-            'rank', 'fluid', 'total', 'thermo', 'env', 'safety', 'econ',
+            'select', 'rank', 'fluid', 'total', 'thermo', 'env', 'safety', 'econ',
             'gwp', 'ashrae', 'T_boil', 'p_50', 'hfg', 'pr'
         )
 
@@ -75,6 +94,7 @@ class ResultsPanel(ttk.Frame):
 
         # Define column headings and widths
         column_config = {
+            'select': ('☐', 30),
             'rank': ('#', 40),
             'fluid': ('Fluid', 120),
             'total': ('Total', 60),
@@ -103,10 +123,13 @@ class ResultsPanel(ttk.Frame):
         # Bind selection event
         self.tree.bind('<<TreeviewSelect>>', self._on_select)
 
+        # Bind click event for checkbox toggling
+        self.tree.bind('<Button-1>', self._on_click)
+
         # Instructions
         info = ttk.Label(
             self,
-            text="Klicka på kolumnrubrik för sortering | Ctrl+klick för multival",
+            text="Klicka på checkbox för att välja | Klicka på kolumnrubrik för sortering",
             font=('Arial', 9, 'italic'),
             foreground='gray'
         )
@@ -135,7 +158,11 @@ class ResultsPanel(ttk.Frame):
             # Format stars
             stars = '⭐' * min(5, int(score.total_score / 20) + 1)
 
+            # Checkbox symbol
+            checkbox = '☑' if score.fluid in self.checked_fluids else '☐'
+
             values = (
+                checkbox,
                 score.rank or '',
                 f"{score.fluid} {stars}",
                 f"{score.total_score:.1f}",
@@ -210,34 +237,61 @@ class ResultsPanel(ttk.Frame):
             self.on_sort(col)
 
     def _on_select(self, event):
-        """Handle selection change"""
-        selected_items = self.tree.selection()
-
-        if selected_items and self.current_scores:
-            # Get fluid names from selected items
-            selected_fluids = []
-            for item in selected_items:
-                values = self.tree.item(item)['values']
-                fluid_with_stars = values[1]  # Column 1 is fluid name
-                # Remove stars
-                fluid = fluid_with_stars.split()[0]
-                selected_fluids.append(fluid)
-
-            if self.on_selection_change:
-                self.on_selection_change(selected_fluids)
+        """Handle selection change - now uses checked fluids"""
+        # Selection is now handled by checkboxes, not tree selection
+        # Notify parent of checked fluids
+        if self.on_selection_change:
+            self.on_selection_change(list(self.checked_fluids))
 
     def get_selected_fluids(self):
-        """Get list of currently selected fluids"""
-        selected_items = self.tree.selection()
-        fluids = []
+        """Get list of currently checked fluids"""
+        return list(self.checked_fluids)
 
-        for item in selected_items:
+    def _on_click(self, event):
+        """Handle click on checkbox column"""
+        region = self.tree.identify_region(event.x, event.y)
+        if region != 'cell':
+            return
+
+        column = self.tree.identify_column(event.x)
+        item = self.tree.identify_row(event.y)
+
+        # Check if clicked on select column (column #0 = #1 in identify_column)
+        if column == '#1' and item:
             values = self.tree.item(item)['values']
-            fluid_with_stars = values[1]
+            fluid_with_stars = values[2]  # Column 2 is fluid name (after select and rank)
             fluid = fluid_with_stars.split()[0]
-            fluids.append(fluid)
 
-        return fluids
+            # Toggle checkbox
+            if fluid in self.checked_fluids:
+                self.checked_fluids.remove(fluid)
+            else:
+                self.checked_fluids.add(fluid)
+
+            # Update display
+            self.update_results(self.current_scores)
+
+            # Notify parent
+            if self.on_selection_change:
+                self.on_selection_change(list(self.checked_fluids))
+
+    def _select_all(self):
+        """Select all fluids"""
+        for score in self.current_scores:
+            self.checked_fluids.add(score.fluid)
+
+        self.update_results(self.current_scores)
+
+        if self.on_selection_change:
+            self.on_selection_change(list(self.checked_fluids))
+
+    def _deselect_all(self):
+        """Deselect all fluids"""
+        self.checked_fluids.clear()
+        self.update_results(self.current_scores)
+
+        if self.on_selection_change:
+            self.on_selection_change(list(self.checked_fluids))
 
 
 # Test standalone
