@@ -16,14 +16,14 @@ class FilterPanel(ttk.Frame):
 
         self.on_filter_change = on_filter_change
 
-        # Filter values
-        self.bp_min = tk.DoubleVar(value=-50)
-        self.bp_max = tk.DoubleVar(value=50)
-        self.gwp_max = tk.IntVar(value=2000)
+        # Filter values - WIDE ranges to include ALL fluids (Water, Air, etc)
+        self.bp_min = tk.DoubleVar(value=-200)  # Includes cryogenic fluids
+        self.bp_max = tk.DoubleVar(value=300)   # Includes high-temp fluids
+        self.gwp_max = tk.IntVar(value=50000)   # No limit by default
         self.p_min = tk.DoubleVar(value=0)
-        self.p_max = tk.DoubleVar(value=20)
+        self.p_max = tk.DoubleVar(value=500)    # Includes Water (220 bar)
 
-        # Safety class checkboxes
+        # Safety class checkboxes - including Unknown for fluids without data
         self.safety_vars = {
             'A1': tk.BooleanVar(value=True),
             'A2L': tk.BooleanVar(value=True),
@@ -33,6 +33,7 @@ class FilterPanel(ttk.Frame):
             'B2L': tk.BooleanVar(value=True),
             'B2': tk.BooleanVar(value=False),
             'B3': tk.BooleanVar(value=False),
+            'Unknown': tk.BooleanVar(value=True),  # Show fluids without safety data
         }
 
         self._create_widgets()
@@ -79,15 +80,15 @@ class FilterPanel(ttk.Frame):
         frame = ttk.LabelFrame(self, text="Kokpunkt @ 1 atm", padding=10)
         frame.pack(fill=tk.X, padx=10, pady=5)
 
-        # Min slider
+        # Min slider - WIDE range for all fluids
         ttk.Label(frame, text="Min [°C]:").pack(anchor=tk.W)
         self.bp_min_scale = tk.Scale(
             frame,
-            from_=-50, to=50,
+            from_=-200, to=300,
             orient=tk.HORIZONTAL,
             variable=self.bp_min,
             command=self._on_filter_update,
-            resolution=5
+            resolution=10
         )
         self.bp_min_scale.pack(fill=tk.X)
 
@@ -95,11 +96,11 @@ class FilterPanel(ttk.Frame):
         ttk.Label(frame, text="Max [°C]:").pack(anchor=tk.W, pady=(10, 0))
         self.bp_max_scale = tk.Scale(
             frame,
-            from_=-50, to=100,
+            from_=-200, to=300,
             orient=tk.HORIZONTAL,
             variable=self.bp_max,
             command=self._on_filter_update,
-            resolution=5
+            resolution=10
         )
         self.bp_max_scale.pack(fill=tk.X)
 
@@ -115,11 +116,11 @@ class FilterPanel(ttk.Frame):
 
         self.gwp_scale = tk.Scale(
             frame,
-            from_=0, to=2000,
+            from_=0, to=50000,
             orient=tk.HORIZONTAL,
             variable=self.gwp_max,
             command=self._on_filter_update,
-            resolution=50
+            resolution=100
         )
         self.gwp_scale.pack(fill=tk.X)
 
@@ -151,15 +152,15 @@ class FilterPanel(ttk.Frame):
         frame = ttk.LabelFrame(self, text="Tryck @ 50°C [bar]", padding=10)
         frame.pack(fill=tk.X, padx=10, pady=5)
 
-        # Min slider
+        # Min slider - Extended range for high-pressure fluids like Water
         ttk.Label(frame, text="Min:").pack(anchor=tk.W)
         self.p_min_scale = tk.Scale(
             frame,
-            from_=0, to=20,
+            from_=0, to=500,
             orient=tk.HORIZONTAL,
             variable=self.p_min,
             command=self._on_filter_update,
-            resolution=0.5
+            resolution=5
         )
         self.p_min_scale.pack(fill=tk.X)
 
@@ -167,11 +168,11 @@ class FilterPanel(ttk.Frame):
         ttk.Label(frame, text="Max:").pack(anchor=tk.W, pady=(10, 0))
         self.p_max_scale = tk.Scale(
             frame,
-            from_=0, to=20,
+            from_=0, to=500,
             orient=tk.HORIZONTAL,
             variable=self.p_max,
             command=self._on_filter_update,
-            resolution=0.5
+            resolution=5
         )
         self.p_max_scale.pack(fill=tk.X)
 
@@ -228,6 +229,15 @@ class FilterPanel(ttk.Frame):
                 command=self._on_filter_update
             )
             cb.pack(anchor=tk.W, padx=5, pady=2)
+
+        # Unknown class (fluids without safety data)
+        cb_unknown = ttk.Checkbutton(
+            other_frame,
+            text="Unknown (okänd data)",
+            variable=self.safety_vars['Unknown'],
+            command=self._on_filter_update
+        )
+        cb_unknown.pack(anchor=tk.W, padx=5, pady=2)
 
     def _create_buttons(self):
         """Create action buttons"""
@@ -309,12 +319,12 @@ class FilterPanel(ttk.Frame):
         self._on_filter_update()
 
     def reset(self):
-        """Reset all filters to defaults"""
-        self.bp_min.set(-50)
-        self.bp_max.set(50)
-        self.gwp_max.set(2000)
+        """Reset all filters to defaults - WIDE open to show ALL fluids"""
+        self.bp_min.set(-200)
+        self.bp_max.set(300)
+        self.gwp_max.set(50000)
         self.p_min.set(0)
-        self.p_max.set(20)
+        self.p_max.set(500)
 
         # Reset all safety classes to checked except B2, B3
         for cls, var in self.safety_vars.items():

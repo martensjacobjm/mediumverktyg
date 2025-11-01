@@ -76,33 +76,36 @@ class FluidDatabase:
         self.all_fluids = self._discover_coolprop_fluids()
         self.metadata_cache: Dict[str, FluidMetadata] = {}
 
-        # Load manual metadata if file exists
+        # ALWAYS generate basic metadata first (for ALL fluids)
+        self._generate_basic_metadata()
+
+        # Then load manual metadata to override/enhance basic data
         if metadata_file and os.path.exists(metadata_file):
             self._load_metadata(metadata_file)
-        else:
-            # Generate basic metadata from CoolProp
-            self._generate_basic_metadata()
 
     def _discover_coolprop_fluids(self) -> List[str]:
-        """Discover all available fluids from CoolProp"""
+        """Discover ALL available fluids from CoolProp - no filtering!"""
         all_fluids = CP.FluidsList()
 
-        # Filter out unsuitable fluids for ORC
-        orc_fluids = []
+        # Return ALL fluids - let the USER decide what's suitable via filters!
+        # Previously filtered for "ORC-suitable" but that removed Water, Air, etc.
+        # Now we show everything and let GUI filters do the work.
+
+        valid_fluids = []
         for fluid in all_fluids:
             try:
-                # Must have critical temperature > 100°C (373 K)
-                # and critical pressure < 100 bar
+                # Just verify we can get basic properties (fluid is usable)
                 T_crit = CP.PropsSI('Tcrit', fluid)
-                p_crit = CP.PropsSI('pcrit', fluid) / 1e5
+                p_crit = CP.PropsSI('pcrit', fluid)
 
-                if T_crit > 373.15 and p_crit < 100:
-                    orc_fluids.append(fluid)
+                # If we got here, fluid is valid
+                valid_fluids.append(fluid)
             except:
-                # Skip fluids that cause errors
+                # Skip fluids that cause errors (corrupted data, etc)
+                # This is the ONLY filtering - technical errors only
                 pass
 
-        return sorted(orc_fluids)
+        return sorted(valid_fluids)
 
     def _generate_basic_metadata(self):
         """Generate basic metadata from CoolProp for all fluids"""
@@ -225,6 +228,9 @@ class FluidDatabase:
         """
         Filter fluids based on criteria
 
+        IMPORTANT: If a fluid lacks metadata for a filter criterion, it is INCLUDED
+        (shown to user). This lets the USER decide, not the program!
+
         Args:
             bp_range: Boiling point range (min, max) in °C
             gwp_max: Maximum GWP allowed
@@ -239,34 +245,44 @@ class FluidDatabase:
 
         for fluid in self.all_fluids:
             meta = self.get_metadata(fluid)
+
+            # If no metadata at all, INCLUDE the fluid (let user see it)
+            # User can filter it out manually if they want
             if not meta:
+                filtered.append(fluid)
                 continue
 
-            # Boiling point filter
-            if bp_range:
+            skip = False
+
+            # Boiling point filter - only apply if data exists
+            if bp_range and meta.T_boiling_1atm is not None and meta.T_boiling_1atm != 0:
                 if meta.T_boiling_1atm < bp_range[0] or meta.T_boiling_1atm > bp_range[1]:
-                    continue
+                    skip = True
 
-            # GWP filter
-            if gwp_max is not None:
+            # GWP filter - only apply if GWP data exists and is meaningful
+            if not skip and gwp_max is not None and meta.gwp > 0:
                 if meta.gwp > gwp_max:
-                    continue
+                    skip = True
 
-            # Safety class filter
-            if safety_classes:
+            # Safety class filter - only apply if safety class is known
+            if not skip and safety_classes and meta.ashrae_class not in ['Unknown', '', None]:
                 if meta.ashrae_class not in safety_classes:
-                    continue
+                    skip = True
 
-            # Pressure filter
-            if pressure_range:
-                props = self.get_saturation_properties(fluid, pressure_temp)
-                if props:
-                    if props.pressure < pressure_range[0] or props.pressure > pressure_range[1]:
-                        continue
-                else:
-                    continue  # Skip if can't get properties
+            # Pressure filter - only apply if we can get properties
+            if not skip and pressure_range:
+                try:
+                    props = self.get_saturation_properties(fluid, pressure_temp)
+                    if props and props.pressure > 0:
+                        if props.pressure < pressure_range[0] or props.pressure > pressure_range[1]:
+                            skip = True
+                    # If can't get properties, INCLUDE the fluid anyway
+                except:
+                    # If error getting properties, INCLUDE the fluid
+                    pass
 
-            filtered.append(fluid)
+            if not skip:
+                filtered.append(fluid)
 
         return filtered
 
