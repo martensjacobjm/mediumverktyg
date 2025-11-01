@@ -29,26 +29,18 @@ git clone <repository-url>
 cd mediumverktyg
 ```
 
-### 2. Kontrollera Python-version (VIKTIGT!)
+### 2. AUTOMATISK INSTALLATION (ETT KOMMANDO!)
 
 ```bash
-# Kör detta FÖRST för att verifiera din Python-version
-python check_python_version.py
+python install.py
 ```
 
-Om du har Python 3.14, **STOPP** - se instruktioner ovan för att installera Python 3.12.
+**Detta script GÖR ALLT AUTOMATISKT:**
+1. ✅ Kontrollerar Python-version
+2. ✅ Stoppar och visar tydliga instruktioner om fel version
+3. ✅ Installerar alla dependencies om rätt version
 
-### 3. Installera dependencies
-
-**Rekommenderad metod** (kontrollerar Python-version automatiskt):
-```bash
-pip install -e .
-```
-
-**Alternativ metod** (om du är säker på din Python-version):
-```bash
-pip install -r requirements.txt
-```
+**Windows:** Dubbelklicka på `install.bat` (samma resultat)
 
 **Dependencies som installeras:**
 - CoolProp (termodynamisk databas) - **KRÄVER Python 3.8-3.13**
@@ -57,7 +49,9 @@ pip install -r requirements.txt
 - reportlab (PDF-export)
 - tkinter (GUI - föriinstallerat med Python)
 
-### 4. Verifiera installation
+Om du har Python 3.14 kommer scriptet STOPPA och visa hur du installerar Python 3.12.
+
+### 3. Verifiera installation (valfritt)
 
 ```bash
 # Testa core-moduler

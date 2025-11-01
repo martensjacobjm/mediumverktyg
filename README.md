@@ -45,21 +45,19 @@ Detta verktyg ger ingenjörer, forskare och studenter möjlighet att:
 - **Kräver:** Python 3.8 - 3.13
 - **Fungerar INTE:** Python 3.14+ (CoolProp saknas ännu)
 
-### Kontrollera din Python-version:
+### AUTOMATISK INSTALLATION (REKOMMENDERAT):
 ```bash
-python --version
-python check_python_version.py  # Detaljerad kontroll
+python install.py
 ```
+**Detta script:**
+1. ✅ Kontrollerar Python-version AUTOMATISKT
+2. ✅ Stoppar om fel version (med tydliga instruktioner)
+3. ✅ Installerar alla dependencies om rätt version
 
-### Installation:
+**Windows:** Dubbelklicka på `install.bat`
+
+### Starta programmet:
 ```bash
-# Rekommenderad metod (kontrollerar Python-version automatiskt)
-pip install -e .
-
-# Alternativ metod
-pip install -r requirements.txt
-
-# Kör applikationen
 python main.py
 ```
 
