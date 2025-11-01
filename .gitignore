@@ -47,6 +47,10 @@ test_comparison_*.png
 orc_fluid_report.pdf
 orc_fluid_data.csv
 
+# Auto-generated start scripts (created by install.py)
+start.bat
+start.sh
+
 # Jupyter
 .ipynb_checkpoints
 

@@ -49,19 +49,24 @@ Detta verktyg ger ingenjörer, forskare och studenter möjlighet att:
 ```bash
 python install.py
 ```
-**Detta script:**
-1. ✅ Kontrollerar Python-version AUTOMATISKT
-2. ✅ Stoppar om fel version (med tydliga instruktioner)
-3. ✅ Installerar alla dependencies om rätt version
+**Detta script GÖR ALLT AUTOMATISKT:**
+1. ✅ Hittar ALLA Python-versioner på systemet (Windows: `py -0`)
+2. ✅ Väljer den nyaste kompatibla versionen (3.8-3.13)
+3. ✅ Installerar dependencies till RÄTT version
+4. ✅ Skapar `start.bat` som använder rätt version
 
-**Windows:** Dubbelklicka på `install.bat`
+**Windows:** Dubbelklicka på `install.bat` (kör scriptet automatiskt)
 
 ### Starta programmet:
 ```bash
-python main.py
+# Windows: Dubbelklicka på
+start.bat
+
+# Eller manuellt (om install.py valde tex py -3.12):
+py -3.12 main.py
 ```
 
-**Har du Python 3.14?** → Installera Python 3.12 från [python.org](https://www.python.org/downloads/)
+**Har du BARA Python 3.14?** → Installera Python 3.12 från [python.org](https://www.python.org/downloads/) först
 
 ---
 
