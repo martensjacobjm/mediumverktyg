@@ -207,17 +207,46 @@ class MainWindow:
         self.filter_panel.reset()
         self.refresh_results()
 
+    def _generate_export_filename(self, prefix, extension):
+        """Generate dynamic filename based on selected fluids"""
+        import datetime
+
+        # Get timestamp
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        # Generate filename based on selected fluids
+        if self.selected_fluids:
+            if len(self.selected_fluids) == 1:
+                # Single fluid: use fluid name
+                fluid_name = self.selected_fluids[0].replace('/', '_').replace('(', '').replace(')', '')
+                return f"{prefix}_{fluid_name}_{timestamp}.{extension}"
+            elif len(self.selected_fluids) <= 3:
+                # 2-3 fluids: use all names
+                fluid_names = '_'.join([f.replace('/', '_').replace('(', '').replace(')', '')
+                                       for f in self.selected_fluids])
+                return f"{prefix}_{fluid_names}_{timestamp}.{extension}"
+            else:
+                # Many fluids: use count
+                return f"{prefix}_{len(self.selected_fluids)}_medier_{timestamp}.{extension}"
+        else:
+            # No selection: use generic name with count
+            count = len(self.current_scores)
+            return f"{prefix}_alla_{count}_medier_{timestamp}.{extension}"
+
     def export_pdf(self):
         """Export results to PDF"""
         if not self.current_scores:
             messagebox.showwarning("Export PDF", "Inga resultat att exportera!")
             return
 
+        # Generate dynamic filename
+        default_filename = self._generate_export_filename("ORC_rapport", "pdf")
+
         # Ask for filename
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
-            initialfile="orc_fluid_report.pdf"
+            initialfile=default_filename
         )
 
         if not filename:
@@ -269,11 +298,14 @@ class MainWindow:
             messagebox.showwarning("Export CSV", "Inga resultat att exportera!")
             return
 
+        # Generate dynamic filename
+        default_filename = self._generate_export_filename("ORC_data", "csv")
+
         # Ask for filename
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            initialfile="orc_fluid_data.csv"
+            initialfile=default_filename
         )
 
         if not filename:
